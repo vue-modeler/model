@@ -1,0 +1,309 @@
+import { ActionError } from './error/action-error'
+import { ActionInternalException } from './error/action-internal-exception'
+import { ActionStatusConflictError } from './error/action-status-conflict-error'
+import { ActionUnexpectedAbortError } from './error/action-unexpected-abort-error'
+import { NestedActionError } from './error/nested-action-error'
+import { ProtoModel } from './proto-model'
+import { ActionFunction, ActionStateName } from './types'
+
+const isAbortError = (originalError: Error): boolean => (originalError instanceof DOMException
+  && originalError.name === 'AbortError')
+  || originalError.message === 'canceled'
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export class Action<Args extends any[] = unknown[]> {
+  static readonly actionFlag = Symbol('__action_original_method__')
+  static readonly state = {
+    pending: 'pending',
+    error: 'error',
+    lock: 'lock',
+    ready: 'ready',
+    abort: 'abort',
+  } as const
+
+  static abortedByLock = Symbol('lock')
+
+  readonly name: string
+  protected _state: ActionStateName = Action.state.ready
+  protected _value
+  protected _args: Args | null = null
+
+  constructor (
+    protected model: ProtoModel,
+    protected actionFunction: ActionFunction<Args>,
+  ) {
+    const name = actionFunction.name
+
+    const isModelMethod = name in model && typeof model[name] === 'function'
+
+    // the best way direct compare model[name] === actionFunction,
+    // but @model decorator create proxy for all model and method become different
+    // TODO: research variants implements direct compare
+    if (!isModelMethod) {
+      throw new ActionInternalException(`Model does not contain method ${name}`)
+    }
+
+    if (!actionFunction[Action.actionFlag] || typeof actionFunction[Action.actionFlag] !== 'function') {
+      throw new ActionInternalException(`Method ${name} is not action`)
+    }
+
+    this.name = name
+  }
+
+  toString (): string {
+    return this.name
+  }
+
+  get state (): ActionStateName {
+    return this._state
+  }
+
+  get asAbortController (): null | AbortController {
+    if (this.isPending) {
+      return this._value.abortController
+    }
+
+    return null
+  }
+
+  get args (): Args | never[] {
+    return this._args || []
+  }
+
+  get asPromise (): null | Promise<void> {
+    if (this.isPending) {
+      return this._value.promise
+    }
+
+    return null
+  }
+
+  /**
+   * @deprecated use this.error
+   */
+  get asError (): null | ActionError {
+    return this.error
+  }
+
+  get error (): null | ActionError {
+    if (this.isError) {
+      return this._value
+    }
+
+    return null
+  }
+
+  get asReason (): null | unknown {
+    if (this.isAbort) {
+      return this._value
+    }
+
+    return null
+  }
+
+  get isPending (): boolean {
+    return this._state === Action.state.pending
+  }
+
+  get isError (): boolean {
+    return this._state === Action.state.error
+  }
+
+  get isReady (): boolean {
+    return this._state === Action.state.ready
+  }
+
+  get isLock (): boolean {
+    return this._state === Action.state.lock
+  }
+
+  get isAbort (): boolean {
+    return this._state === Action.state.abort
+  }
+
+  is (...args: ActionStateName[]): boolean {
+    return !!args.find((state) => this._state === state)
+  }
+
+  exec (...args: Args): Promise<void> {
+    if (this.is(Action.state.lock, Action.state.pending)) {
+      throw new ActionStatusConflictError(
+        this.name,
+        this._state,
+        Action.state.pending,
+      )
+    }
+
+    const newArgs = args
+    let abortController = args[args.length - 1]
+
+    if (!(abortController instanceof AbortController)) {
+      abortController = new AbortController()
+      newArgs.push(abortController)
+    }
+
+    this._state = Action.state.pending
+    this._args = args
+
+    const result = this.actionFunction[Action.actionFlag].apply(this.model, newArgs)
+
+    if (!(result instanceof Promise)) {
+      this._state = Action.state.ready
+
+      return result
+    }
+
+    const actionPromise = result
+      .then(() => {
+        this.ready()
+      })
+      .catch((originalError) => {
+        const shouldThrowAsIs = originalError instanceof ActionInternalException
+          || originalError instanceof RangeError
+          || originalError instanceof ReferenceError
+          || originalError instanceof SyntaxError
+          || originalError instanceof TypeError
+          || originalError instanceof URIError
+
+        if (shouldThrowAsIs) {
+          throw originalError
+        }
+
+        const isAbort = isAbortError(originalError)
+
+        if (isAbort && !this.is(Action.state.pending, Action.state.lock)) {
+          throw new ActionUnexpectedAbortError(this.name, this._state)
+        }
+
+        const isAbortedForLock = isAbort
+          && this._value?.abortController instanceof AbortController
+          && this._value?.abortController.signal.reason === Action.abortedByLock
+
+        if (isAbortedForLock) {
+          this._state = Action.state.lock
+          this._value = null
+
+          return
+        }
+
+        if (isAbort) {
+          this._state = Action.state.abort
+          this._value = this._value?.abortController.signal.reason || null
+
+          return
+        }
+
+        // If an action throws an error, we wrap it in an ActionError and
+        // store it as the action's state.
+        // Then we throw the ActionError at the next level.
+        // At the highest level, error throwing  will be blocked.
+        // For this reason try|catch will not work.
+        // To catch an action error outside the model, we must use "if" statement
+        // after waiting for the action promise or use "watcher" by the action state.
+        // For example
+        // await model.someAction()
+        // if (model.action(someAction).asError) {
+        //   handleError()
+        //   return
+        // }
+        // or
+        // watch(
+        //  () => model.action(model.someAction),
+        //  (action) => {
+        //    if (action.asError) {
+        //      handleError()
+        //      return
+        //    }
+        //  }
+        // )
+        const actionError = originalError instanceof ActionError
+          ? new NestedActionError(this.name, { cause: originalError })
+          : new ActionError(this.name, { cause: originalError })
+
+        this.setError(actionError)
+      })
+
+    this._value = {
+      promise: actionPromise,
+      abortController,
+    }
+
+    return actionPromise
+  }
+
+  abort (reason?: unknown): Promise<void> {
+    if (!this.isPending) {
+      return Promise.resolve()
+    }
+
+    this._value.abortController?.abort(reason)
+
+    return this._value.promise
+  }
+
+  lock (): Promise<void> {
+    if (this.isPending) {
+      return this.abort(Action.abortedByLock)
+    }
+
+    this._state = Action.state.lock
+    this._value = null
+
+    return Promise.resolve()
+  }
+
+  unlock (): this {
+    if (!this.isLock) {
+      throw new ActionStatusConflictError(
+        this.name,
+        this._state,
+        Action.state.ready,
+      )
+    }
+
+    return this.ready()
+  }
+
+  protected setError (error: Error): this {
+    if (!this.isPending) {
+      throw new ActionStatusConflictError(
+        this.name,
+        this._state,
+        Action.state.error,
+      )
+    }
+
+    this._state = Action.state.error
+    this._value = error
+
+    return this
+  }
+
+  protected ready (): this {
+    if (this.isError) {
+      throw new ActionStatusConflictError(
+        this.name,
+        this._state,
+        Action.state.ready,
+      )
+    }
+
+    this._state = Action.state.ready
+
+    return this
+  }
+
+  resetError (): this {
+    if (!this.error) {
+      throw new ActionStatusConflictError(
+        this.name,
+        this._state,
+        Action.state.ready,
+      )
+    }
+
+    this._state = Action.state.ready
+
+    return this
+  }
+}
