@@ -1,41 +1,64 @@
 
 import { Action } from './action'
 import { ProtoModel } from './proto-model'
-import { ActionFunction, Model, ModelAdapterProxyConstructor } from './types'
+import { OriginalMethodWrapper, Model, ModelAdapterProxyConstructor } from './types'
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
 const ModelProxy = Proxy as ModelAdapterProxyConstructor
 
 export function createModel<Target extends ProtoModel> (
-  model: Target,
+  protoModel: Target,
 ): Model<Target> {
-  const asyncModel = new ModelProxy<Target>(
-    model,
+  const model = new ModelProxy<Target>(
+    protoModel,
     {
       get (target, propName, receiver): unknown {
         const targetProperty = Reflect.get(target, propName, receiver)
 
         const targetPropertyIsFunction = typeof targetProperty === 'function'
-        const targetPropertyIsAction = targetPropertyIsFunction
+        const targetPropertyIsAction =  targetPropertyIsFunction
           && Action.actionFlag in targetProperty
           && typeof targetProperty[Action.actionFlag] === 'function'
 
         if (targetPropertyIsAction) {
-          return target.action(targetProperty as ActionFunction)
+          return target.action(targetProperty as OriginalMethodWrapper)
         }
 
         if (targetPropertyIsFunction) {
-          // TODO: написать тест на это
-          // this будет равен proxy обьекту без привязки контекста внутри методов.
-          // Из-за этого обращение this.someAction будет возвращать action,
-          // Код типа this.action(this.someAction)... будет вызывать ошибку "Не найден action",
-          // потому что аргументом передается action, а нужен исходный метод
-          // Использовать this.someAction как action внутри класса не дааст TypeScript
+          // ** IMPORTANT **
+          // Here, the "target" is the original instance without the proxy applied. 
+          // We need to bind "target" to the property in order
+          // to keep "this" equal to target inside the property. 
           //
-          // Т.е. нам нужно, что бы внутри объекта this.someAction был исходным методом.
-          // поэтому делаем привязку контекста this
-
+          // Otherwise, "this" will be equal to proxy object, so 
+          // "this.someAction" will invoke get trap from proxy and
+          // return Action instance instead of original method.
+          // Then "this.action(this.someAction)" will throw an error "Action not found".
+          // because "this.action" requires method as argument, not Action instance.
           return targetProperty.bind(target)
+          
+          // Example with error, if we will not bind "target" to the property:
+          // 
+          // class TestProtoModel extends ProtoModel {
+          //   @actnio async someAction(): Promise<void> {
+          //     ...
+          //   }
+          //
+          //   @action async otherAction() {
+          //     ...
+          //     // this line will throw typescript error
+          //     // because in the class context "this.someAction" is method, not action
+          //     this.someAction.exec() 
+          //     
+          //     // So, to launch action or get his state
+          //     // we need to get action as object  and then call it.
+          //     // But any of this will throw an error "Action not found"
+          //     // because "this" inside property will be equal proxy object
+          //     // and "this.someAction" will be equal to Action instance
+          //     this.action(this.someAction).exec()
+          //     const error = this.action(this.someAction).error
+          //   }
+          // }
         }
 
         return targetProperty
@@ -43,5 +66,5 @@ export function createModel<Target extends ProtoModel> (
     },
   )
 
-  return asyncModel
+  return model
 }
