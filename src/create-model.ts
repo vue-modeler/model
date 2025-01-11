@@ -40,7 +40,7 @@ export function createModel<Target extends ProtoModel> (
           // Example with error, if we will not bind "target" to the property:
           // 
           // class TestProtoModel extends ProtoModel {
-          //   @actnio async someAction(): Promise<void> {
+          //   @action async someAction(): Promise<void> {
           //     ...
           //   }
           //
@@ -50,9 +50,9 @@ export function createModel<Target extends ProtoModel> (
           //     // because in the class context "this.someAction" is method, not action
           //     this.someAction.exec() 
           //     
-          //     // So, to launch action or get his state
-          //     // we need to get action as object  and then call it.
-          //     // But any of this will throw an error "Action not found"
+          //     // So, to invoke action or get his state
+          //     // we need to get action as object.
+          //     // But any of these lines will throw an error "Action not found"
           //     // because "this" inside property will be equal proxy object
           //     // and "this.someAction" will be equal to Action instance
           //     this.action(this.someAction).exec()
