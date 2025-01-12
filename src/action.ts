@@ -4,11 +4,20 @@ import { ActionStatusConflictError } from './error/action-status-conflict-error'
 import { ActionUnexpectedAbortError } from './error/action-unexpected-abort-error'
 import { NestedActionError } from './error/nested-action-error'
 import { ProtoModel } from './proto-model'
-import { ActionFunction, ActionStateName } from './types'
+import { OriginalMethodWrapper, ActionStateName } from './types'
 
-const isAbortError = (originalError: Error): boolean => (originalError instanceof DOMException
+const isAbortError = (originalError: unknown): boolean => (originalError instanceof DOMException
   && originalError.name === 'AbortError')
-  || originalError.message === 'canceled'
+  || (typeof originalError === 'object' && originalError !== null && 'message' in originalError && originalError.message === 'canceled')
+
+
+
+interface ActionPendingValue {
+  promise: Promise<void>
+  abortController: AbortController
+}
+
+type ActionValue = ActionPendingValue | ActionError | NestedActionError | null
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export class Action<Args extends any[] = unknown[]> {
@@ -25,25 +34,21 @@ export class Action<Args extends any[] = unknown[]> {
 
   readonly name: string
   protected _state: ActionStateName = Action.state.ready
-  protected _value
+  protected _value: ActionValue = null
   protected _args: Args | null = null
 
   constructor (
     protected model: ProtoModel,
-    protected actionFunction: ActionFunction<Args>,
+    protected actionFunction: OriginalMethodWrapper<Args>,
   ) {
     const name = actionFunction.name
 
-    const isModelMethod = name in model && typeof model[name] === 'function'
-
-    // the best way direct compare model[name] === actionFunction,
-    // but @model decorator create proxy for all model and method become different
-    // TODO: research variants implements direct compare
+    const isModelMethod = name in model && typeof (model as unknown as Record<string, unknown>)[name] === 'function'
     if (!isModelMethod) {
       throw new ActionInternalException(`Model does not contain method ${name}`)
     }
 
-    if (!actionFunction[Action.actionFlag] || typeof actionFunction[Action.actionFlag] !== 'function') {
+    if (typeof actionFunction[Action.actionFlag] !== 'function') {
       throw new ActionInternalException(`Method ${name} is not action`)
     }
 
@@ -60,7 +65,7 @@ export class Action<Args extends any[] = unknown[]> {
 
   get asAbortController (): null | AbortController {
     if (this.isPending) {
-      return this._value.abortController
+      return (this._value as ActionPendingValue).abortController
     }
 
     return null
@@ -72,7 +77,7 @@ export class Action<Args extends any[] = unknown[]> {
 
   get asPromise (): null | Promise<void> {
     if (this.isPending) {
-      return this._value.promise
+      return (this._value as ActionPendingValue).promise
     }
 
     return null
@@ -87,15 +92,15 @@ export class Action<Args extends any[] = unknown[]> {
 
   get error (): null | ActionError {
     if (this.isError) {
-      return this._value
+      return this._value as ActionError
     }
 
     return null
   }
 
-  get asReason (): null | unknown {
+  get asReason (): unknown {
     if (this.isAbort) {
-      return this._value
+      return (this._value as ActionPendingValue).abortController.signal.reason as unknown
     }
 
     return null
@@ -135,7 +140,7 @@ export class Action<Args extends any[] = unknown[]> {
     }
 
     const newArgs = args
-    let abortController = args[args.length - 1]
+    let abortController = args[args.length - 1] as AbortController | undefined
 
     if (!(abortController instanceof AbortController)) {
       abortController = new AbortController()
@@ -145,19 +150,20 @@ export class Action<Args extends any[] = unknown[]> {
     this._state = Action.state.pending
     this._args = args
 
-    const result = this.actionFunction[Action.actionFlag].apply(this.model, newArgs)
+    const originalMethod = this.actionFunction[Action.actionFlag]
+    const result = originalMethod.apply(this.model, newArgs)
 
     if (!(result instanceof Promise)) {
       this._state = Action.state.ready
 
-      return result
+      return Promise.resolve(result)
     }
 
     const actionPromise = result
       .then(() => {
         this.ready()
       })
-      .catch((originalError) => {
+      .catch((originalError: unknown) => {
         const shouldThrowAsIs = originalError instanceof ActionInternalException
           || originalError instanceof RangeError
           || originalError instanceof ReferenceError
@@ -176,8 +182,8 @@ export class Action<Args extends any[] = unknown[]> {
         }
 
         const isAbortedForLock = isAbort
-          && this._value?.abortController instanceof AbortController
-          && this._value?.abortController.signal.reason === Action.abortedByLock
+          && (this._value as ActionPendingValue).abortController instanceof AbortController
+          && (this._value as ActionPendingValue).abortController.signal.reason === Action.abortedByLock
 
         if (isAbortedForLock) {
           this._state = Action.state.lock
@@ -187,9 +193,9 @@ export class Action<Args extends any[] = unknown[]> {
         }
 
         if (isAbort) {
+          // TODO: need test
           this._state = Action.state.abort
-          this._value = this._value?.abortController.signal.reason || null
-
+          
           return
         }
 
@@ -218,7 +224,7 @@ export class Action<Args extends any[] = unknown[]> {
         // )
         const actionError = originalError instanceof ActionError
           ? new NestedActionError(this.name, { cause: originalError })
-          : new ActionError(this.name, { cause: originalError })
+          : new ActionError(this.name, { cause: originalError as Error })
 
         this.setError(actionError)
       })
@@ -231,16 +237,19 @@ export class Action<Args extends any[] = unknown[]> {
     return actionPromise
   }
 
+  // It return same promise as exec method
+  // but in reject state
+  // So, any code awaiting promise from exec will be rejected
   abort (reason?: unknown): Promise<void> {
     if (!this.isPending) {
       return Promise.resolve()
     }
 
-    this._value.abortController?.abort(reason)
+    (this._value as ActionPendingValue).abortController.abort(reason)
 
-    return this._value.promise
+    return (this._value as ActionPendingValue).promise
   }
-
+    
   lock (): Promise<void> {
     if (this.isPending) {
       return this.abort(Action.abortedByLock)
@@ -264,7 +273,7 @@ export class Action<Args extends any[] = unknown[]> {
     return this.ready()
   }
 
-  protected setError (error: Error): this {
+  protected setError (error: ActionError | NestedActionError): this {
     if (!this.isPending) {
       throw new ActionStatusConflictError(
         this.name,
