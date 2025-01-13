@@ -55,10 +55,12 @@ export class Action<Args extends any[] = unknown[]> {
     this.name = name
   }
 
+  // TODO: add tests
   toString (): string {
     return this.name
   }
 
+  // TODO: add tests
   get state (): ActionStateName {
     return this._state
   }
@@ -71,6 +73,7 @@ export class Action<Args extends any[] = unknown[]> {
     return null
   }
 
+  // TODO: add tests
   get args (): Args | never[] {
     return this._args || []
   }
@@ -206,20 +209,24 @@ export class Action<Args extends any[] = unknown[]> {
         // For this reason try|catch will not work.
         // To catch an action error outside the model, we must use "if" statement
         // after waiting for the action promise or use "watcher" by the action state.
-        // For example
+        // 
+        // For example:
+        //      
         // await model.someAction()
-        // if (model.action(someAction).asError) {
+        // if (model.action(someAction).error) {
         //   handleError()
         //   return
         // }
+        //
         // or
+        //
         // watch(
-        //  () => model.action(model.someAction),
-        //  (action) => {
-        //    if (action.asError) {
-        //      handleError()
+        //  () => model.action(model.someAction.error),
+        //  (error) => {
+        //    if (!error) {
         //      return
         //    }
+        //    handleError()
         //  }
         // )
         const actionError = originalError instanceof ActionError

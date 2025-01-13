@@ -1,4 +1,4 @@
-import { Action } from '../../../action'
+import { Action } from '../../../src/action'
 
 const pending = Action.state.pending
 const error = Action.state.error

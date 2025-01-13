@@ -1,3 +1,4 @@
+import { Action } from '../action'
 
 export class ActionError extends Error {
   constructor (
@@ -9,7 +10,7 @@ export class ActionError extends Error {
     this.name = this.constructor.name
   }
 
-  for (action: (...args: any[]) => Promise<void>): boolean {
+  for (action: Action): boolean {
     return action.name === this.actionName
   }
 

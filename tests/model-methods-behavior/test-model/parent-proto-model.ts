@@ -1,7 +1,7 @@
-import { action } from '../../../decorator/action'
-import { ProtoModel } from '../../../proto-model'
+import { action } from '../../../src/decorator/action'
+import { ProtoModel } from '../../../src/proto-model'
 
-export class ModelParent extends ProtoModel {
+export class ParentProtoModel extends ProtoModel {
   readonly debug = 'debug'
 
   constructor (

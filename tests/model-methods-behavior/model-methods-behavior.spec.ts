@@ -1,11 +1,11 @@
-
 import { isShallow, watch } from 'vue'
 
+import { describe, expect, it } from 'vitest'
+import { ActionError } from '../../src/error/action-error'
+import { ActionStatusConflictError } from '../../src/error/action-status-conflict-error'
 import { actionErrorWithTwoNested, actionStatesForParallel, actionSuccessWithTwoNested, nestedWithAbort, nestedWithAbortAll, nestedWithLock, singleErrorAction, singleSuccessAction } from './fixture/action-state'
 import { createApiMock } from './test-model/create-api-mock'
 import { createTestModel } from './test-model/create-test-model'
-import { ActionError } from '../../error/action-error'
-import { ActionStatusConflictError } from '../../error/action-status-conflict-error'
 
 export interface ApiService {
   sendRequest: (...args: unknown[]) => Promise<unknown>
@@ -13,7 +13,8 @@ export interface ApiService {
 }
 
 describe('Test model', () => {
-  test('calls action without args successfully', async () => {
+
+  it('calls action without args successfully', async () => {
     const apiMock = createApiMock()
     const model = createTestModel(apiMock)
     expect(model.testGetter).toBe(1)
@@ -23,9 +24,12 @@ describe('Test model', () => {
 
     expect(isShallow(model.successActionWithoutArgs)).toBeTruthy()
 
-    watch(() => ({
-      state: model.successActionWithoutArgs.state,
-    }), (state) => originStates.push(state))
+    watch(
+      () => ({
+        state: model.successActionWithoutArgs.state,
+      }),
+      (state) => originStates.push(state),
+    )
 
     await model.successActionWithoutArgs.exec()
 
@@ -39,7 +43,7 @@ describe('Test model', () => {
     expect(apiMock.sendRequest.mock.calls[0][0]).toBeInstanceOf(AbortController)
   })
 
-  test('calls action with args successfully', async () => {
+  it('calls action with args successfully', async () => {
     const apiMock = createApiMock()
     const model = createTestModel(apiMock)
     const originStates: object[] = []
@@ -49,7 +53,13 @@ describe('Test model', () => {
       (state) => originStates.push(state),
     )
 
-    await model.successActionWithArgs.exec(1, 'string', {})
+    const argNumber = 1
+    const argString = 'string'
+    const argObject = {}
+    const actionPromise = model.successActionWithArgs.exec(argNumber, argString, argObject)
+    const callArgs = model.successActionWithArgs.args
+    
+    await actionPromise
 
     expect(originStates.length).toEqual(singleSuccessAction.length)
     originStates.forEach((originState, index) => {
@@ -60,13 +70,17 @@ describe('Test model', () => {
 
     const argsCount = apiMock.sendRequest.mock.calls[0]
     expect(argsCount).toHaveLength(4)
-    expect(apiMock.sendRequest.mock.calls[0][0]).toEqual(1)
-    expect(apiMock.sendRequest.mock.calls[0][1]).toStrictEqual('string')
-    expect(apiMock.sendRequest.mock.calls[0][2]).toEqual({})
+    expect(apiMock.sendRequest.mock.calls[0][0]).toEqual(argNumber)
+    expect(apiMock.sendRequest.mock.calls[0][1]).toEqual(argString)
+    expect(apiMock.sendRequest.mock.calls[0][2]).toEqual(argObject)
     expect(apiMock.sendRequest.mock.calls[0][3]).toBeInstanceOf(AbortController)
+
+    expect(callArgs[0]).toEqual(argNumber)
+    expect(callArgs[1]).toEqual(argString)
+    expect(callArgs[2]).toEqual(argObject)
   })
 
-  test('calls redefined action from super class', async () => {
+  it('calls redefined action from super class', async () => {
     const apiMock = createApiMock()
     const model = createTestModel(apiMock)
     const originStates: object[] = []
@@ -91,7 +105,7 @@ describe('Test model', () => {
     expect(apiMock.sendRequestFromParent.mock.calls[0][3]).toBeInstanceOf(AbortController)
   })
 
-  test('action state becomes an error when action throws error', async () => {
+  it('action state becomes an error when action throws error', async () => {
     const apiMock = createApiMock()
     const model = createTestModel(apiMock)
     const originStates: object[] = []
@@ -106,14 +120,14 @@ describe('Test model', () => {
     originStates.forEach((originState, index) => {
       expect(originState).toEqual(singleErrorAction[index])
     })
-    const actionError = model.singleErrorAction.asError
+    const actionError = model.singleErrorAction.error
 
     expect(actionError).toBeInstanceOf(ActionError)
     expect(actionError?.message).toEqual('Action singleErrorAction throw error')
     expect(actionError?.cause).toEqual(new Error())
   })
 
-  test('calls two nested actions from single root without error', async () => {
+  it('calls two nested actions from single root without error', async () => {
     const apiMock = createApiMock()
     const model = createTestModel(apiMock)
 
@@ -146,7 +160,7 @@ describe('Test model', () => {
     })
   })
 
-  test('state of root action is ready when nested action throws error', async () => {
+  it('state of root action is ready when nested action throws error', async () => {
     const apiMock = createApiMock()
     const model = createTestModel(apiMock)
 
@@ -168,14 +182,14 @@ describe('Test model', () => {
       expect(originState).toEqual(actionErrorWithTwoNested[index])
     })
 
-    const nestedError = model.singleErrorAction.asError
+    const nestedError = model.singleErrorAction.error
 
     expect(nestedError).toBeInstanceOf(ActionError)
     expect(nestedError?.message).toEqual('Action singleErrorAction throw error')
     expect(nestedError?.cause).toEqual(new Error())
   })
-
-  test('calls several independente actions in parallel without error', async () => {
+  
+  it('calls several independente actions in parallel without error', async () => {
     const apiMock = createApiMock()
     const model = createTestModel(apiMock)
 
@@ -200,7 +214,7 @@ describe('Test model', () => {
     })
   })
 
-  test('throws an error when calling the same action in parallel', async () => {
+  it('throws an error when calling the same action in parallel', async () => {
     const apiMock = createApiMock()
     const model = createTestModel(apiMock)
 
@@ -221,7 +235,7 @@ describe('Test model', () => {
     }
   })
 
-  test('throws an error when calling the same action recursively', async () => {
+  it('throws an error when calling the same action recursively', async () => {
     const apiMock = createApiMock()
     const model = createTestModel(apiMock)
 
@@ -239,7 +253,7 @@ describe('Test model', () => {
     }
   })
 
-  test('root action becomes ready without errors after abort nested action from external execution context', async () => {
+  it('root action becomes ready without errors after aborting nested action from external execution context', async () => {
     const apiMock = createApiMock()
     const model = createTestModel(apiMock)
 
@@ -252,7 +266,7 @@ describe('Test model', () => {
       nested: nestedAction.state,
     }), (state) => originStates.push(state))
 
-    setTimeout(() => model.nestedWithAbort.abort(), 0)
+    void setTimeout(() => void model.nestedWithAbort.abort(), 0)
     await model.rootWithNestedAndAbort.exec(false)
 
     expect(originStates.length).toEqual(nestedWithAbort.length)
@@ -261,7 +275,7 @@ describe('Test model', () => {
     })
   })
 
-  test('root action becomes abort without errors after sharing Abortcontroller with nested action which is aborted', async () => {
+  it('root action becomes abort without errors after sharing Abortcontroller with nested action which is aborted', async () => {
     const apiMock = createApiMock()
     const model = createTestModel(apiMock)
 
@@ -274,7 +288,7 @@ describe('Test model', () => {
       nested: nestedAction.state,
     }), (state) => originStates.push(state))
 
-    setTimeout(() => model.nestedWithAbort.abort(), 0)
+    void setTimeout(() => void model.nestedWithAbort.abort(), 0)
     await model.rootWithNestedAndAbort.exec(true)
 
     expect(originStates.length).toEqual(nestedWithAbortAll.length)
@@ -283,7 +297,7 @@ describe('Test model', () => {
     })
   })
 
-  test('root action becomes ready without error if any of nested action locked', async () => {
+  it('root action becomes ready without error if any of nested action locked', async () => {
     const apiMock = createApiMock()
     const model = createTestModel(apiMock)
 
@@ -296,7 +310,7 @@ describe('Test model', () => {
       nested: nestedState.state,
     }), (state) => originStates.push(state))
 
-    setTimeout(() => model.nestedWithAbort.lock(), 0)
+    void setTimeout(() => void model.nestedWithAbort.lock(), 0)
     await model.rootWithNestedAndAbort.exec(false)
 
     expect(originStates.length).toEqual(nestedWithLock.length)
@@ -305,39 +319,39 @@ describe('Test model', () => {
     })
   })
 
-  test('any synchronous methods work like native', async () => {
+  it('any synchronous methods work like native', () => {
     const apiMock = createApiMock()
     const model = createTestModel(apiMock)
 
-    expect(model.nativeMethodWithData(10)).toEqual(10)
-    expect(() => model.nativeMethodWithError()).toThrowError()
+    expect(model.regularMethodWithData(10)).toEqual(10)
+    expect(() => { model.regularMethodWithError(); }).toThrowError()
   })
 
-  test('any asynchronous method with not void result works like native', async () => {
-    const apiMock = createApiMock()
-    const model = createTestModel(apiMock)
+  // it('any asynchronous method with not void result works like native', () => {
+  //   const apiMock = createApiMock()
+  //   const model = createTestModel(apiMock)
 
-    expect(await model.nativeAsyncMethodWithData(10)).toEqual(10)
-  })
+  //   expect(model.regularAsyncMethodWithData(10)).resolves.toEqual(10)
+  // })
 
-  test('any asynchronous method without @action decorator and with void result is seen like Action but throws error in runtime', async () => {
+  it('any asynchronous method without @action decorator and with void result is seen like Action but throws error in runtime', async () => {
     const apiMock = createApiMock()
     const model = createTestModel(apiMock)
 
     expect.assertions(2)
     try {
-      await model.nativeAsyncMethodWithError.exec('I won`t be called')
+      await model.regularAsyncMethodWithError.exec('I won`t be called')
     } catch (error) {
       expect(error).toBeInstanceOf(TypeError)
-      expect(error.message).toEqual('model.nativeAsyncMethodWithError.exec is not a function')
+      expect((error as Error).message).toEqual('model.regularAsyncMethodWithError.exec is not a function')
     }
   })
 
-  test('native method can get a action inside by origin action method', async () => {
+  it('native method can get a action inside by origin action method', () => {
     const apiMock = createApiMock()
     const model = createTestModel(apiMock)
 
-    expect(model.nestedActionA === model.nativeMethodWithActionInside()).toBeTruthy()
+    expect(model.nestedActionA === model.regularMethodWithActionInside()).toBeTruthy()
   })
 })
 

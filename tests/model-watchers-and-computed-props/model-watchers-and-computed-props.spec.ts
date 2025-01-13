@@ -1,8 +1,9 @@
 
-import { isShallow, nextTick } from 'vue'
+import { isReactive, isShallow, nextTick } from 'vue'
 
-import { defModel } from '../../def-model'
-import { TestModel } from './test-model'
+import { describe, expect, Mock, vi, test } from 'vitest'
+import { createModel } from '../../src'
+import { TestProtoModel } from './test-model'
 
 export interface ApiService {
   sendRequest: (...args: unknown[]) => Promise<unknown>
@@ -10,26 +11,26 @@ export interface ApiService {
 }
 
 interface WatcherMock {
-  watcherInConstructor: jest.Mock
-  computedInConstructor: jest.Mock
+  watcherInConstructor: Mock
+  computedInConstructor: Mock
 }
 
 const createWatcherMocks = (): WatcherMock => ({
-  watcherInConstructor: jest.fn(),
-  computedInConstructor: jest.fn(),
+  watcherInConstructor: vi.fn(),
+  computedInConstructor: vi.fn(),
 })
 
 describe('Test model', () => {
   test('is shallow reactive', () => {
     const watcherMocks = createWatcherMocks()
-    const model = defModel(new TestModel(0, watcherMocks))
+    const model = createModel(new TestProtoModel(0, watcherMocks))
 
     expect(isShallow(model)).toBeTruthy()
   })
 
   test('computes proprerty defined as ComputedRef in constructor', () => {
     const watcherMocks = createWatcherMocks()
-    const model = defModel(new TestModel(0, watcherMocks))
+    const model = createModel(new TestProtoModel(0, watcherMocks))
 
     model.inc()
     expect(model.computedFromConstructor).toBe(2)
@@ -42,7 +43,7 @@ describe('Test model', () => {
 
   test('runs watcher witch is defined in constructor', async () => {
     const watcherMocks = createWatcherMocks()
-    const model = defModel(new TestModel(0, watcherMocks))
+    const model = createModel(new TestProtoModel(0, watcherMocks))
 
     model.inc()
     await nextTick()
@@ -57,7 +58,7 @@ describe('Test model', () => {
 
   test('computed props and watcher are dispose after call destructor', async () => {
     const watcherMocks = createWatcherMocks()
-    const model = defModel(new TestModel(0, watcherMocks))
+    const model = createModel(new TestProtoModel(0, watcherMocks))
 
     model.inc()
     await nextTick()

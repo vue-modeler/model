@@ -1,10 +1,8 @@
 import { ComputedRef, ref } from 'vue'
 
-import { model } from '../../decorator/model'
-import { ProtoModel } from '../../proto-model'
+import { ProtoModel } from '../../src/proto-model'
 
-@model
-export class TestModel extends ProtoModel {
+export class TestProtoModel extends ProtoModel {
   readonly debug = 'debug'
 
   protected _counter = ref(0)
@@ -35,6 +33,10 @@ export class TestModel extends ProtoModel {
       () => this._counter.value,
       this.watchers.watcherInConstructor,
     )
+  }
+
+  get counter (): number {
+    return this._counter.value
   }
 
   get computedFromHook (): number {
