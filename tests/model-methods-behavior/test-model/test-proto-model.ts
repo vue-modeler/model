@@ -1,11 +1,10 @@
 import { ShallowReactive } from 'vue'
 
-import { ActionPublic } from '#app/modeler/types'
+import { ActionPublic } from '../../../src/types'
+import { action } from '../../../src/decorator/action'
+import { ParentProtoModel } from './parent-proto-model'
 
-import { action } from '../../../decorator/action'
-import { ModelParent } from './model-parent'
-
-export class TestModel extends ModelParent {
+export class TestProtoModel extends ParentProtoModel {
   readonly debug = 'debug'
 
   constructor (
@@ -49,6 +48,8 @@ export class TestModel extends ModelParent {
   }
 
   @action async rootSuccessAction (): Promise<void> {
+    console.log('rootSuccessAction')
+
     await this.nestedActionA()
     await this.nestedActionB()
   }
@@ -111,40 +112,33 @@ export class TestModel extends ModelParent {
     }
   }
 
-  // we can define async method without result,
-  // From external scope it will be seen as Action
-  // thus TS will not let as call this method as function/
-  //
-  // But this method has not decorator @action, and has not Action.actionFlag
-  // so it is not Action and calling nativeAsyncMethodWithError.exec will throw error in runtime
-  // because .exec is undefined
-  //
-  // Recommendation: does not define public async method returning void
-  async nativeAsyncMethodWithError (message: string): Promise<void> {
+  // we can define async method without @action decorator,
+  // From external scope it will be seen as regular method
+  async regularAsyncMethodWithError (message: string): Promise<void> {
     return Promise.reject(new Error(message))
   }
 
   // All methods below are not considered as Actions
   // because an Action is an asynchronous method with void result.
-  nativeMethodWithError (): void {
+  regularMethodWithError (): void {
     throw new Error()
   }
 
-  nativeMethodWithData<T> (data:T): T {
+  regularMethodWithData<T> (data:T): T {
     return data
   }
 
-  async nativeAsyncMethodWithData<T> (data: T): Promise<T> {
+  async regularAsyncMethodWithData<T> (data: T): Promise<T> {
     return Promise.resolve(data)
   }
 
-  // IMPORTANT: if yo need call action inside a native method
+  // IMPORTANT: if yo need call action inside a regular method
   // you should convert the method to action.
   // Method which calls action is action
   //
-  // But inside native method you can take a Action as object to get it state.
+  // But inside regular method you can take a Action as object to get it state.
   // Use for it  this.action(this.some Action)
-  nativeMethodWithActionInside (): ShallowReactive<ActionPublic> {
+  regularMethodWithActionInside (): ShallowReactive<ActionPublic> {
     return this.action(this.nestedActionA)
   }
 }

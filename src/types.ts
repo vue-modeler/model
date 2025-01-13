@@ -3,11 +3,14 @@ import { Action } from './action'
 import { ProtoModel } from './proto-model'
 
 export type ActionPublic = Omit<Action, 'call'>
-export type ActionFunction<Args extends unknown[] = unknown[]> = (...args: Args) => void | Promise<void>
-export type ActionStateName = keyof typeof Action.state
-export type ActionCallable<Args extends unknown[]> = Action<Args> & {
-  (...args: Args): Promise<void>
+export type OriginalMethod<Args extends unknown[] = unknown[]> = (...args: Args) => void | Promise<void>
+
+export interface OriginalMethodWrapper<Args extends unknown[] = unknown[]> {
+  (...args: Args): void | Promise<void>
+  [Action.actionFlag]: OriginalMethod
 }
+
+export type ActionStateName = keyof typeof Action.state
 
 export type Model<T> = {
   [K in keyof T]:

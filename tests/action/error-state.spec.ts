@@ -38,7 +38,7 @@ describe('Action in ERROR state', () => {
     validateLockState(action)
   })
 
-  it('throws error after trying unlock', async () => {
+  it('throws error after trying unlock', () => {
     const oldError = action.error
     expect(() => action.unlock()).toThrow('Trying to update state of singleErrorAction from error to ready')
 

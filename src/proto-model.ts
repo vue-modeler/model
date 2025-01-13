@@ -2,7 +2,7 @@ import { computed, ComputedGetter, ComputedRef, DebuggerOptions, effectScope, re
 
 import { ModelError } from './error/model-error'
 import { Action } from './action'
-import { ActionFunction, ActionPublic } from './types'
+import { OriginalMethodWrapper, ActionPublic } from './types'
 
 // @see https://github.com/trekhleb/javascript-algorithms/blob/master/src/algorithms/math/bits/updateBit.js
 const updateBit = (number: number, bitPosition: number, bitValue: boolean): number => {
@@ -18,6 +18,8 @@ const updateBit = (number: number, bitPosition: number, bitValue: boolean): numb
   return (number & clearMask) | (bitValueNormalized << bitPosition)
 }
 
+type ModelConstructor = new (...args: any[]) => ProtoModel
+
 export abstract class ProtoModel {
   // хранит вычисляемое значение ошибки для каждого действия.
   // Значения строится на основе this._actionState
@@ -31,8 +33,8 @@ export abstract class ProtoModel {
   // @action someAction() {
   //   super.someAction() - здесь была ошибка при использовании ключей строк
   // }
-  protected _actions: Map<ActionFunction, Action> = new Map()
-  protected _unwatchers: Set<ReturnType<typeof watch>> = new Set()
+  protected _actions = new Map<OriginalMethodWrapper, Action>()
+  protected _unwatchers = new Set<ReturnType<typeof watch>>()
 
   protected _hasActionWithError = ref(0)
   protected _hasPendingActions = ref(0)
@@ -89,13 +91,13 @@ export abstract class ProtoModel {
     return (number & clearMask) | (bitValueNormalized << bitPosition)
   }
 
-  protected createAction (actionFunction: ActionFunction): ShallowReactive<ActionPublic> {
+  protected createAction (actionFunction: OriginalMethodWrapper): ShallowReactive<ActionPublic> {
     const action = shallowReactive(new Action(this, actionFunction))
 
     this._actions.set(actionFunction, action)
 
     this.watch(
-      () => !!action?.isPending,
+      () => !!action.isPending,
       ((bitPosition) => (isPending: boolean) => {
         this._hasPendingActions.value = updateBit(
           this._hasPendingActions.value,
@@ -106,7 +108,7 @@ export abstract class ProtoModel {
     )
 
     this.watch(
-      () => !!action?.isError,
+      () => !!action.isError,
       ((bitPosition) => (isError: boolean) => {
         this._hasActionWithError.value = updateBit(
           this._hasActionWithError.value,
@@ -119,16 +121,17 @@ export abstract class ProtoModel {
     return action
   }
 
-  isModelOf (typeModel: { new(...args: any[]): ProtoModel }) : boolean {
+  isModelOf (typeModel: ModelConstructor): boolean {
     return this instanceof typeModel
   }
 
-  action (actionFunction: ActionFunction): ShallowReactive<ActionPublic> {
-    return this._actions.get(actionFunction) || this.createAction(actionFunction)
+  // TODO: add tests
+  action (originalMethod: OriginalMethodWrapper): ShallowReactive<ActionPublic> {
+    return this._actions.get(originalMethod) || this.createAction(originalMethod)
   }
 
   destructor (): void {
-    this._unwatchers.forEach((unwatcher) => unwatcher())
+    this._unwatchers.forEach((unwatcher) => { unwatcher() })
     this._unwatchers = new Set()
 
     this._effectScope.stop()

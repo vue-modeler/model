@@ -1,5 +1,4 @@
-/* eslint-disable function-paren-newline */
-import { Provider, provider, ProviderOptions } from '@vue-modeler/dc'
+import { DependencyFactory, Provider, provider, ProviderOptions } from '@vue-modeler/dc'
 
 import { createModel } from './create-model'
 import { ProtoModel } from './proto-model'
@@ -26,9 +25,13 @@ import { Model } from './types'
 //   })
 // }
 
+type ProviderFactory<T> = (factory: DependencyFactory<T>, options?: ProviderOptions) => Provider<T>
+
 export function model<T extends ProtoModel> (
   modelFactory: () => T,
   options?: ProviderOptions,
 ): Provider<Model<T>> {
-  return provider(() => createModel(modelFactory()), options)
+  const factory: DependencyFactory<Model<T>> = () => createModel(modelFactory())
+
+  return (provider as ProviderFactory<Model<T>>)(factory, options)
 }

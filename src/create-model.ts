@@ -1,4 +1,5 @@
 
+import { shallowReactive } from 'vue'
 import { Action } from './action'
 import { ProtoModel } from './proto-model'
 import { OriginalMethodWrapper, Model, ModelAdapterProxyConstructor } from './types'
@@ -10,7 +11,7 @@ export function createModel<Target extends ProtoModel> (
   protoModel: Target,
 ): Model<Target> {
   const model = new ModelProxy<Target>(
-    protoModel,
+    shallowReactive(protoModel),
     {
       get (target, propName, receiver): unknown {
         const targetProperty = Reflect.get(target, propName, receiver)
