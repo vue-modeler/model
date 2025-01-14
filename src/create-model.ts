@@ -10,6 +10,10 @@ const ModelProxy = Proxy as ModelAdapterProxyConstructor
 export function createModel<Target extends ProtoModel> (
   protoModel: Target,
 ): Model<Target> {
+  if (!(protoModel instanceof ProtoModel)) {
+    throw new Error('ProtoModel instance is required')
+  }
+
   const model = new ModelProxy<Target>(
     shallowReactive(protoModel),
     {
@@ -28,8 +32,8 @@ export function createModel<Target extends ProtoModel> (
         if (targetPropertyIsFunction) {
           // ** IMPORTANT **
           // Here, the "target" is the original instance without the proxy applied. 
-          // We need to bind "target" to the property in order
-          // to keep "this" equal to target inside the property. 
+          // We need to bind "target" to the method in order
+          // to keep "this" equal to target inside the method. 
           //
           // Otherwise, "this" will be equal to proxy object, so 
           // "this.someAction" will invoke get trap from proxy and
@@ -47,13 +51,13 @@ export function createModel<Target extends ProtoModel> (
           //
           //   @action async otherAction() {
           //     ...
-          //     // this line will throw typescript error
+          //     // first of all this line will throw typescript error
           //     // because in the class context "this.someAction" is method, not action
           //     this.someAction.exec() 
           //     
           //     // So, to invoke action or get his state
           //     // we need to get action as object.
-          //     // But any of these lines will throw an error "Action not found"
+          //     // But any of lines below will throw error "Action not found"
           //     // because "this" inside property will be equal proxy object
           //     // and "this.someAction" will be equal to Action instance
           //     this.action(this.someAction).exec()

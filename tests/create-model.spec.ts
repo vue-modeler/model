@@ -4,6 +4,7 @@ import { ProtoModel } from '../src/proto-model'
 import { createModel } from '../src/create-model'
 import { Action } from '../src/action'
 import { Model } from '../src/types'
+import { isShallow } from 'vue'
 
 class TestProtoModel extends ProtoModel {
   regularProperty = 'test'
@@ -23,54 +24,55 @@ class TestProtoModel extends ProtoModel {
 }
 
 describe('createModel', () => {
+
+  test('returns shallow reactive model', () => {
+    const model = createModel(new TestProtoModel())
+
+    expect(isShallow(model)).toBeTruthy()
+  })
+
+
   test('creates proxy that returns action for decorated methods', () => {
-    const protoModel = new TestProtoModel()
-    const model = createModel(protoModel)
+    const model = createModel(new TestProtoModel())
 
     expect(model.actionMethod).toBeDefined()
     expect(model.actionMethod).toBeInstanceOf(Action)
   })
 
   test('preserves access to regular methods', () => {
-    const protoModel = new TestProtoModel()
-    const model = createModel(protoModel)
+    const model = createModel(new TestProtoModel())
 
     expect(model.regularMethod()).toBe('regular')
   })
 
   test('preserves access to regular properties', () => {
-    const protoModel = new TestProtoModel()
-    const model = createModel(protoModel)
+    const model = createModel(new TestProtoModel())
 
     expect(model.regularProperty).toBe('test')
   })
 
   test('preserves access to computed properties', () => {
-    const protoModel = new TestProtoModel()
-    const model = createModel(protoModel)
+    const model = createModel(new TestProtoModel())
 
     expect(model.computedProperty).toBe('computed1')
   })
 
   test('allows setting regular properties', () => {
-    const protoModel = new TestProtoModel()
-    const model = createModel(protoModel)
+    const model = createModel(new TestProtoModel())
 
     model.regularProperty = 'modified'
     expect(model.regularProperty).toBe('modified')
   })
 
   test('preserves instanceof checks', () => {
-    const protoModel = new TestProtoModel()
-    const model = createModel(protoModel)
+    const model = createModel(new TestProtoModel())
 
     expect(model instanceof TestProtoModel).toBe(true)
     expect(model instanceof ProtoModel).toBe(true)
   })
 
   test('preserves model type', () => {
-    const protoModel = new TestProtoModel()
-    const model = createModel(protoModel)
+    const model = createModel(new TestProtoModel())
 
     // Type check
     const typedModel: Model<TestProtoModel> = model

@@ -21,24 +21,25 @@ const updateBit = (number: number, bitPosition: number, bitValue: boolean): numb
 type ModelConstructor = new (...args: any[]) => ProtoModel
 
 export abstract class ProtoModel {
-  // хранит вычисляемое значение ошибки для каждого действия.
-  // Значения строится на основе this._actionState
+  // @deprecated
   protected _error = shallowRef<ModelError | null>(null)
+  // each model has its own effect scope to avoid memory leaks
   protected _effectScope = effectScope(true)
 
-  // используем WeakMap что бы ключами для хранения дейстий были не имена, а сами функции
-  // Ключи строки вызывают ошибку при вызове родительского действия из дочернего
-  // Текст ошибки - "Attempt change status from pending to pending"
-  //
-  // @action someAction() {
-  //   super.someAction() - здесь была ошибка при использовании ключей строк
-  // }
-  protected _actions = new Map<OriginalMethodWrapper, Action>()
+  // we use WeakMap to store actions as keys to avoid memory leaks
+  protected _actions = new WeakMap<OriginalMethodWrapper, Action>()
+  // WeakMap doesn't have a size property, so we need to store the size of the map
+  protected _actionsSize = 0
+
+  // watchers are stored in a set to avoid memory leaks
   protected _unwatchers = new Set<ReturnType<typeof watch>>()
 
-  protected _hasActionWithError = ref(0)
+  // it is flag to check if any action is pending state
   protected _hasPendingActions = ref(0)
+  // it is flag to check if any action is error state
+  protected _hasActionWithError = ref(0)
 
+  // @deprecated
   get error (): ShallowRef<ModelError | null> {
     return this._error
   }
@@ -95,7 +96,7 @@ export abstract class ProtoModel {
     const action = shallowReactive(new Action(this, actionFunction))
 
     this._actions.set(actionFunction, action)
-
+    this._actionsSize++
     this.watch(
       () => !!action.isPending,
       ((bitPosition) => (isPending: boolean) => {
@@ -104,7 +105,7 @@ export abstract class ProtoModel {
           bitPosition,
           isPending,
         )
-      })(this._actions.size),
+      })(this._actionsSize),
     )
 
     this.watch(
@@ -115,7 +116,7 @@ export abstract class ProtoModel {
           bitPosition,
           isError,
         )
-      })(this._actions.size),
+      })(this._actionsSize),
     )
 
     return action
@@ -125,7 +126,16 @@ export abstract class ProtoModel {
     return this instanceof typeModel
   }
 
-  // TODO: add tests
+  /**
+  * This is an open method, but you won't be able to call it from outside the model
+  * because its argument is "OriginalMethodWrapper".
+  * "OriginalMethodWrapper" is not accessible from the outside,
+  * because the model is wrapped in a proxy and
+  * the "get" trap will always return an "Action" instead of "OriginalMethodWrapper".
+  * 
+  * @param originalMethod - method to create action for
+  * @returns action
+  */
   action (originalMethod: OriginalMethodWrapper): ShallowReactive<ActionPublic> {
     return this._actions.get(originalMethod) || this.createAction(originalMethod)
   }

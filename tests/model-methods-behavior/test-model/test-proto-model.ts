@@ -1,6 +1,6 @@
 import { ShallowReactive } from 'vue'
 
-import { ActionPublic } from '../../../src/types'
+import { ActionPublic, OriginalMethodWrapper } from '../../../src/types'
 import { action } from '../../../src/decorator/action'
 import { ParentProtoModel } from './parent-proto-model'
 
@@ -18,7 +18,7 @@ export class TestProtoModel extends ParentProtoModel {
   }
 
   get testGetter (): number {
-    return 1
+    return 1 + 1
   }
 
   @action async successActionWithoutArgs (ac = new AbortController()): Promise<void> {
@@ -91,7 +91,7 @@ export class TestProtoModel extends ParentProtoModel {
 
   @action async nestedWithAbort (abortController = new AbortController()): Promise<void> {
     await new Promise((resolve, reject) => {
-      abortController?.signal.addEventListener('abort', () => {
+      abortController.signal.addEventListener('abort', () => {
         reject(new DOMException('', 'AbortError'))
       })
     })
@@ -107,7 +107,8 @@ export class TestProtoModel extends ParentProtoModel {
     // To abort current action after nested we should
     // 1. check that the nested action state is abort
     // 2. throw new DOMException('', 'AbortError') - this execption switchs state of the current action to abort
-    if (abortCurrent && this.action(this.nestedWithAbort).isAbort) {
+    // eslint-disable-next-line @typescript-eslint/unbound-method
+    if (abortCurrent && this.action(this.nestedWithAbort as OriginalMethodWrapper<[]>).isAbort) {
       throw new DOMException('', 'AbortError')
     }
   }
@@ -139,6 +140,7 @@ export class TestProtoModel extends ParentProtoModel {
   // But inside regular method you can take a Action as object to get it state.
   // Use for it  this.action(this.some Action)
   regularMethodWithActionInside (): ShallowReactive<ActionPublic> {
-    return this.action(this.nestedActionA)
+    // eslint-disable-next-line @typescript-eslint/unbound-method
+    return this.action(this.nestedActionA as OriginalMethodWrapper<[]>)
   }
 }
