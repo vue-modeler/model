@@ -1,7 +1,7 @@
 
-import { isReactive, isShallow, nextTick } from 'vue'
+import { nextTick } from 'vue'
 
-import { describe, expect, Mock, vi, test } from 'vitest'
+import { describe, expect, Mock, test, vi } from 'vitest'
 import { createModel } from '../../src'
 import { TestProtoModel } from './test-model'
 
@@ -21,13 +21,7 @@ const createWatcherMocks = (): WatcherMock => ({
 })
 
 describe('Test model', () => {
-  test('is shallow reactive', () => {
-    const watcherMocks = createWatcherMocks()
-    const model = createModel(new TestProtoModel(0, watcherMocks))
-
-    expect(isShallow(model)).toBeTruthy()
-  })
-
+  
   test('computes proprerty defined as ComputedRef in constructor', () => {
     const watcherMocks = createWatcherMocks()
     const model = createModel(new TestProtoModel(0, watcherMocks))

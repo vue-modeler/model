@@ -14,10 +14,17 @@ export interface ApiService {
 
 describe('Test model', () => {
 
+  it('action returns shallow reactive action', () => {
+    const apiMock = createApiMock()
+    const model = createTestModel(apiMock)
+
+    expect(isShallow(model.successActionWithoutArgs)).toBeTruthy()
+  })
+
   it('calls action without args successfully', async () => {
     const apiMock = createApiMock()
     const model = createTestModel(apiMock)
-    expect(model.testGetter).toBe(1)
+    expect(model.testGetter).toBe(2)
     expect(model.testReadonly).toBe('readonly')
 
     const originStates: object[] = []

@@ -44,7 +44,7 @@ export class TestProtoModel extends ProtoModel {
   }
 
   get computedFromConstructor (): number {
-    return this._computedFromConstructor?.value || this._counter.value
+    return this._computedFromConstructor.value || this._counter.value
   }
 
   inc (): void {
