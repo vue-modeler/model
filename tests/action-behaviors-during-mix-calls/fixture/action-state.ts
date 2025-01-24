@@ -1,10 +1,10 @@
 import { Action } from '../../../src/action'
 
-const pending = Action.state.pending
-const error = Action.state.error
-const ready = Action.state.ready
-const lock = Action.state.lock
-const abort = Action.state.abort
+const pending = Action.possibleState.pending
+const error = Action.possibleState.error
+const ready = Action.possibleState.ready
+const lock = Action.possibleState.lock
+const abort = Action.possibleState.abort
 
 export const singleSuccessAction = [
   { state: pending },
@@ -39,7 +39,7 @@ export const nestedWithAbortAll = [
     nested: abort,
   },
   {
-    root: abort,
+    root: ready,
     nested: abort,
   },
 ]

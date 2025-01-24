@@ -1,11 +1,18 @@
 import { ShallowReactive } from 'vue'
 
-import { ActionPublic, OriginalMethodWrapper } from '../../../src/types'
-import { action } from '../../../src/decorator/action'
+import { ActionPublic, OriginalMethodWrapper } from '../../src/types'
+import { action } from '../../src/decorator/action'
 import { ParentProtoModel } from './parent-proto-model'
+
+export interface ApiService {
+  sendRequest: (...args: unknown[]) => Promise<unknown>
+  sendRequestFromParent: (...args: unknown[]) => Promise<unknown>
+}
 
 export class TestProtoModel extends ParentProtoModel {
   readonly debug = 'debug'
+
+  normalPropery = 1
 
   constructor (
     readonly api: {
@@ -17,7 +24,7 @@ export class TestProtoModel extends ParentProtoModel {
     super(api)
   }
 
-  get testGetter (): number {
+  get someGetter (): number {
     return 1 + 1
   }
 
@@ -89,7 +96,7 @@ export class TestProtoModel extends ParentProtoModel {
     await this.recursivelyAction(index + 1)
   }
 
-  @action async nestedWithAbort (abortController = new AbortController()): Promise<void> {
+  @action async actionWithAbort (abortController = new AbortController()): Promise<void> {
     await new Promise((resolve, reject) => {
       abortController.signal.addEventListener('abort', () => {
         reject(new DOMException('', 'AbortError'))
@@ -97,49 +104,73 @@ export class TestProtoModel extends ParentProtoModel {
     })
   }
 
-  @action async rootWithNestedAndAbort (abortCurrent: boolean, abortController = new AbortController()): Promise<void> {
-    // we share abortController, but it will not abort all actions.
-    // Each action call has separate Promise
-    // So, aborting nested action will reject Promise of the nested action only
-    // Current action Promise will be resolved succesfully.
-    await this.nestedWithAbort(abortController)
-
-    // To abort current action after nested we should
-    // 1. check that the nested action state is abort
-    // 2. throw new DOMException('', 'AbortError') - this execption switchs state of the current action to abort
-    // eslint-disable-next-line @typescript-eslint/unbound-method
-    if (abortCurrent && this.action(this.nestedWithAbort as OriginalMethodWrapper<[]>).isAbort) {
-      throw new DOMException('', 'AbortError')
+  /**
+   * We can share abortController, but it will not abort the whole chain of actions.
+   * Each action call has separate Promise scope.
+   * So, aborting abortController will reject Promise of the nested action only
+   * and nested action state will be abort
+   * Current action Promise will be resolved succesfully.
+   * 
+   * To abort current action after nested we should
+   * 1. check that the nested action state is abort
+   * 2. throw new DOMException('', 'AbortError') - this execption switchs state of the current action to abort
+   * 
+   * Example:
+   * 
+   * ```ts
+   * if (this.action(this.nestedWithAbort as OriginalMethodWrapper<[]>).isAbort) {
+   *   throw new DOMException('', 'AbortError')
+   * }
+   * ```
+   */
+  @action async rootWithNestedAndAbort (options: { shareAbortController: boolean }, abortController = new AbortController()): Promise<void> {
+    if (options.shareAbortController) {
+      await this.actionWithAbort(abortController)
+    } else {
+      await this.actionWithAbort()
     }
   }
 
-  // we can define async method without @action decorator,
-  // From external scope it will be seen as regular method
-  async regularAsyncMethodWithError (message: string): Promise<void> {
+  /**
+   * We can define ASYNC METHOD WITCH RETURNS VOID WITHOUT @action DECORATOR,
+   * From external scope it will be seen as Action
+   * But it is not Action, because decorator is not applied.
+   * Thus, trying to call model.normalAsyncMethod.exec() will THROW AN ERROR IN RUNTIME
+   */
+  async normalAsyncMethodwithVoidResult (message: string): Promise<void> {
     return Promise.reject(new Error(message))
   }
 
-  // All methods below are not considered as Actions
-  // because an Action is an asynchronous method with void result.
-  regularMethodWithError (): void {
+  /**
+   * All methods below are not considered as Actions
+   * because an Action is an asynchronous method with void result.
+   */
+  normalSyncMethodWithError (): void {
     throw new Error()
   }
 
-  regularMethodWithData<T> (data:T): T {
+  normalSyncMethodWithData<T> (data:T): T {
     return data
   }
 
-  async regularAsyncMethodWithData<T> (data: T): Promise<T> {
+  async normalAsyncMethodWithData<T> (data: T): Promise<T> {
     return Promise.resolve(data)
   }
 
-  // IMPORTANT: if yo need call action inside a regular method
-  // you should convert the method to action.
-  // Method which calls action is action
-  //
-  // But inside regular method you can take a Action as object to get it state.
-  // Use for it  this.action(this.some Action)
-  regularMethodWithActionInside (): ShallowReactive<ActionPublic> {
+  async normalAsyncMethodWithError (message: string): Promise<string> {
+    return Promise.reject(new Error(message))
+  }
+
+
+  /**
+   * IMPORTANT: if yo need call action inside a normal method
+   * you should convert the method to action.
+   * Method which calls action is action
+   *
+   * But inside normal method you can take a Action as object to get it state.
+   * Use for it  this.action(this.some Action)
+   */
+    normalSyncMethodWithActionInside (): ShallowReactive<ActionPublic> {
     // eslint-disable-next-line @typescript-eslint/unbound-method
     return this.action(this.nestedActionA as OriginalMethodWrapper<[]>)
   }

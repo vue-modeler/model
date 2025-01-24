@@ -1,6 +1,4 @@
-
 import { expect } from 'vitest'
-import { Action } from '../../../src/action'
 import { ActionPublic } from '../../../src/types'
 
 export function validateLockState (action: ActionPublic): void {
@@ -9,7 +7,7 @@ export function validateLockState (action: ActionPublic): void {
   expect(action.error).toBeNull()
 }
 
-export function validateErrorState (action: Action, error: Error): void {
+export function validateErrorState (action: ActionPublic, error: Error): void {
   expect(action.isError).toBeTruthy()
 
   expect(action.error).toBeInstanceOf(Error)
@@ -18,18 +16,18 @@ export function validateErrorState (action: Action, error: Error): void {
   expect(action.asReason).toBeNull()
 }
 
-export function validatePendingState (action: Action): void {
+export function validatePendingState (action: ActionPublic): void {
   expect(action.isPending).toBeTruthy()
   expect(action.asAbortController).toBeInstanceOf(AbortController)
 }
 
-export function validateReadyState (action: Action): void {
+export function validateReadyState (action: ActionPublic): void {
   expect(action.isReady).toBeTruthy()
   expect(action.asAbortController).toBeNull()
   expect(action.error).toBeNull()
 }
 
-export function validateAbortState (action: Action, reason: unknown): void {
+export function validateAbortState (action: ActionPublic, reason: unknown): void {
   expect(action.isAbort).toBeTruthy()
   expect(action.asAbortController).toBeNull()
   expect(action.error).toBeNull()
