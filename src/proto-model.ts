@@ -1,22 +1,9 @@
-import { computed, ComputedGetter, ComputedRef, DebuggerOptions, effectScope, ref, ShallowReactive, shallowReactive, ShallowRef, shallowRef, watch, WatchStopHandle } from 'vue'
+import { computed, ComputedGetter, ComputedRef, DebuggerOptions, effectScope, Ref, ref, ShallowReactive, shallowReactive, shallowRef, watch, WatchStopHandle } from 'vue'
 
-import { ModelError } from './error/model-error'
 import { Action } from './action'
-import { OriginalMethodWrapper, ActionPublic } from './types'
+import { ModelError } from './error/model-error'
+import { ActionPublic, ActionStateName, OriginalMethodWrapper } from './types'
 
-// @see https://github.com/trekhleb/javascript-algorithms/blob/master/src/algorithms/math/bits/updateBit.js
-const updateBit = (number: number, bitPosition: number, bitValue: boolean): number => {
-  // Normalized bit value.
-  const bitValueNormalized = bitValue
-    ? 1
-    : 0
-
-  // eslint-disable-next-line no-bitwise
-  const clearMask = ~(1 << bitPosition)
-
-  // eslint-disable-next-line no-bitwise
-  return (number & clearMask) | (bitValueNormalized << bitPosition)
-}
 
 type ModelConstructor = new (...args: any[]) => ProtoModel
 
@@ -27,29 +14,21 @@ export abstract class ProtoModel {
   protected _effectScope = effectScope(true)
 
   // we use WeakMap to store actions as keys to avoid memory leaks
-  protected _actions = new WeakMap<OriginalMethodWrapper, Action>()
+  protected _actions = new WeakMap<OriginalMethodWrapper, ShallowReactive<ActionPublic>>()
+  protected _actionIds = new WeakMap<ShallowReactive<ActionPublic>, number>()
+  protected _actionStates = new Map<ActionStateName, Ref<number>>()
   // WeakMap doesn't have a size property, so we need to store the size of the map
   protected _actionsSize = 0
 
   // watchers are stored in a set to avoid memory leaks
   protected _unwatchers = new Set<ReturnType<typeof watch>>()
 
-  // it is flag to check if any action is pending state
-  protected _hasPendingActions = ref(0)
-  // it is flag to check if any action is error state
-  protected _hasActionWithError = ref(0)
-
-  // @deprecated
-  get error (): ShallowRef<ModelError | null> {
-    return this._error
-  }
-
   get hasPendingActions (): boolean {
-    return !!this._hasPendingActions.value
+    return !!this.getActionStatesRef(Action.possibleState.pending).value
   }
 
   get hasActionWithError (): boolean {
-    return !!this._hasActionWithError.value
+    return !!this.getActionStatesRef(Action.possibleState.error).value
   }
 
   protected watch (...args: unknown[]): WatchStopHandle {
@@ -80,46 +59,64 @@ export abstract class ProtoModel {
     return this._effectScope.run(() => computed(getter, debugOptions))
   }
 
+  // @see https://github.com/trekhleb/javascript-algorithms/blob/master/src/algorithms/math/bits/updateBit.js
   protected updateBit (number: number, bitPosition: number, bitValue: boolean): number {
     // Normalized bit value.
     const bitValueNormalized = bitValue
-      ? 1
-      : 0
-    // eslint-disable-next-line no-bitwise
-    const clearMask = ~(1 << bitPosition)
+    ? 1
+    : 0
 
-    // eslint-disable-next-line no-bitwise
-    return (number & clearMask) | (bitValueNormalized << bitPosition)
-  }
+  const clearMask = ~(1 << bitPosition)
+
+  return (number & clearMask) | (bitValueNormalized << bitPosition)
+}
+
 
   protected createAction (actionFunction: OriginalMethodWrapper): ShallowReactive<ActionPublic> {
     const action = shallowReactive(new Action(this, actionFunction))
 
     this._actions.set(actionFunction, action)
-    this._actionsSize++
-    this.watch(
-      () => !!action.isPending,
-      ((bitPosition) => (isPending: boolean) => {
-        this._hasPendingActions.value = updateBit(
-          this._hasPendingActions.value,
-          bitPosition,
-          isPending,
-        )
-      })(this._actionsSize),
-    )
-
-    this.watch(
-      () => !!action.isError,
-      ((bitPosition) => (isError: boolean) => {
-        this._hasActionWithError.value = updateBit(
-          this._hasActionWithError.value,
-          bitPosition,
-          isError,
-        )
-      })(this._actionsSize),
-    )
-
+    this._actionIds.set(action, ++this._actionsSize)
+    this.setActionState(action)
+    
     return action
+  }
+
+  protected getActionStatesRef(stateName: ActionStateName): Ref<number> {
+    const refToStateFlag = this._actionStates.get(stateName) || ref(0)
+    if (this._actionStates.get(stateName) === undefined) {
+      this._actionStates.set(stateName, refToStateFlag)
+    }
+
+    return refToStateFlag
+  }
+
+  hasActionInState(state: ActionStateName): boolean {
+    return !!this.getActionStatesRef(state).value
+  }
+
+  /**
+   * It is public method in context ProtoModel,
+   * but in Model<ProtoModel> context it is protected method
+   * 
+   * @see type Model<T>
+   */
+  setActionState(action: Action): void {
+    const actionId = this._actionIds.get(action)
+
+    if (!actionId) {
+      throw new Error('Action not found')
+    }
+
+    for (const stateName of action.possibleStates) {
+      if (stateName === action.state) {
+        continue
+      }
+
+      this.getActionStatesRef(stateName).value = this.updateBit(this.getActionStatesRef(stateName).value, actionId, false)
+    }
+
+    this.getActionStatesRef(action.state).value = this.updateBit(this.getActionStatesRef(action.state).value, actionId, true)
   }
 
   isModelOf (typeModel: ModelConstructor): boolean {

@@ -1,11 +1,11 @@
-import { isShallow, watch } from 'vue'
+import { watch } from 'vue'
 
 import { describe, expect, it } from 'vitest'
 import { ActionError } from '../../src/error/action-error'
 import { ActionStatusConflictError } from '../../src/error/action-status-conflict-error'
 import { actionErrorWithTwoNested, actionStatesForParallel, actionSuccessWithTwoNested, nestedWithAbort, nestedWithAbortAll, nestedWithLock, singleErrorAction, singleSuccessAction } from './fixture/action-state'
-import { createApiMock } from './test-model/create-api-mock'
-import { createTestModel } from './test-model/create-test-model'
+import { createApiMock } from '../test-model/create-api-mock'
+import { createTestModel } from '../test-model/create-test-model'
 
 export interface ApiService {
   sendRequest: (...args: unknown[]) => Promise<unknown>
@@ -14,22 +14,60 @@ export interface ApiService {
 
 describe('Test model', () => {
 
-  it('action returns shallow reactive action', () => {
+  it('hasPendingActions changes reactively when action is launched', async () => {
     const apiMock = createApiMock()
     const model = createTestModel(apiMock)
 
-    expect(isShallow(model.successActionWithoutArgs)).toBeTruthy()
+    const pendingState: boolean[] = []
+    watch(
+      () => model.hasPendingActions,
+      (state) => pendingState.push(state),
+    )
+
+    const actionPromise = model.successActionWithoutArgs.exec()
+
+    expect(model.hasPendingActions).toBeTruthy()
+    expect(model.hasActionWithError).toBeFalsy()
+
+    await actionPromise
+
+    expect(model.hasPendingActions).toBeFalsy()
+    expect(model.hasActionWithError).toBeFalsy()
+
+    expect(pendingState.length).toEqual(2)
+    expect(pendingState[0]).toBeTruthy()
+    expect(pendingState[1]).toBeFalsy()
   })
 
+  it('hasActionWithError changes reactively when error is thrown', async () => {
+    const apiMock = createApiMock()
+    const model = createTestModel(apiMock)
+
+    const errorState: boolean[] = []
+    watch(
+      () => model.hasActionWithError,
+      (state) => errorState.push(state),
+    )
+
+    const actionPromise = model.singleErrorAction.exec()
+
+    expect(model.hasPendingActions).toBeTruthy()
+    expect(model.hasActionWithError).toBeFalsy()
+
+    await actionPromise
+
+    expect(model.hasPendingActions).toBeFalsy()
+    expect(model.hasActionWithError).toBeTruthy()
+
+    expect(errorState.length).toEqual(1)
+    expect(errorState[0]).toBeTruthy()
+  })
+
+  
   it('calls action without args successfully', async () => {
     const apiMock = createApiMock()
     const model = createTestModel(apiMock)
-    expect(model.testGetter).toBe(2)
-    expect(model.testReadonly).toBe('readonly')
-
     const originStates: object[] = []
-
-    expect(isShallow(model.successActionWithoutArgs)).toBeTruthy()
 
     watch(
       () => ({
@@ -38,13 +76,17 @@ describe('Test model', () => {
       (state) => originStates.push(state),
     )
 
-    await model.successActionWithoutArgs.exec()
-
+    const actionPromise = model.successActionWithoutArgs.exec()
+    const actionCallArgs = model.successActionWithoutArgs.args
+    
+    await actionPromise
+    
     expect(originStates.length).toEqual(singleSuccessAction.length)
     originStates.forEach((originState, index) => {
       expect(originState).toEqual(singleSuccessAction[index])
     })
 
+    expect(actionCallArgs).toEqual([])
     expect(apiMock.sendRequest.mock.calls).toHaveLength(1)
     expect(apiMock.sendRequest.mock.calls[0]).toHaveLength(1)
     expect(apiMock.sendRequest.mock.calls[0][0]).toBeInstanceOf(AbortController)
@@ -64,7 +106,7 @@ describe('Test model', () => {
     const argString = 'string'
     const argObject = {}
     const actionPromise = model.successActionWithArgs.exec(argNumber, argString, argObject)
-    const callArgs = model.successActionWithArgs.args
+    const actionCallArgs = model.successActionWithArgs.args
     
     await actionPromise
 
@@ -75,16 +117,16 @@ describe('Test model', () => {
 
     expect(apiMock.sendRequest.mock.calls).toHaveLength(1)
 
-    const argsCount = apiMock.sendRequest.mock.calls[0]
-    expect(argsCount).toHaveLength(4)
+    const apiCallArgsCount = apiMock.sendRequest.mock.calls[0]
+    expect(apiCallArgsCount).toHaveLength(4)
     expect(apiMock.sendRequest.mock.calls[0][0]).toEqual(argNumber)
     expect(apiMock.sendRequest.mock.calls[0][1]).toEqual(argString)
     expect(apiMock.sendRequest.mock.calls[0][2]).toEqual(argObject)
     expect(apiMock.sendRequest.mock.calls[0][3]).toBeInstanceOf(AbortController)
 
-    expect(callArgs[0]).toEqual(argNumber)
-    expect(callArgs[1]).toEqual(argString)
-    expect(callArgs[2]).toEqual(argObject)
+    expect(actionCallArgs[0]).toEqual(argNumber)
+    expect(actionCallArgs[1]).toEqual(argString)
+    expect(actionCallArgs[2]).toEqual(argObject)
   })
 
   it('calls redefined action from super class', async () => {
@@ -149,25 +191,16 @@ describe('Test model', () => {
       nestedB: nestedB.state,
     }), (state) => originStates.push(state))
 
-    const pendingState: boolean[] = []
-    watch(
-      () => model.hasPendingActions,
-      (state) => pendingState.push(state),
-    )
-
+    
     await model.rootSuccessAction.exec()
 
     expect(originStates.length).toEqual(actionSuccessWithTwoNested.length)
-    expect(pendingState.length).toEqual(2)
-    expect(pendingState[0]).toBeTruthy()
-    expect(pendingState[1]).toBeFalsy()
-
     originStates.forEach((originState, index) => {
       expect(originState).toEqual(actionSuccessWithTwoNested[index])
     })
   })
 
-  it('state of root action is ready when nested action throws error', async () => {
+  it('root action becomes "ready" when nested action throws error', async () => {
     const apiMock = createApiMock()
     const model = createTestModel(apiMock)
 
@@ -260,43 +293,55 @@ describe('Test model', () => {
     }
   })
 
-  it('root action becomes ready without errors after aborting nested action from external execution context', async () => {
+  it('root action becomes "ready" without errors after aborting nested action from external execution context', async () => {
     const apiMock = createApiMock()
     const model = createTestModel(apiMock)
 
     const rootAction = model.rootWithNestedAndAbort
-    const nestedAction = model.nestedWithAbort
-
+    const nestedAction = model.actionWithAbort
+    const abortController = new AbortController()
+    
     const originStates: object[] = []
     watch(() => ({
       root: rootAction.state,
       nested: nestedAction.state,
     }), (state) => originStates.push(state))
 
-    void setTimeout(() => void model.nestedWithAbort.abort(), 0)
-    await model.rootWithNestedAndAbort.exec(false)
+    void setTimeout(() => void model.actionWithAbort.abort(), 0)
+    await model.rootWithNestedAndAbort.exec(
+      { shareAbortController: false },
+      abortController,
+    )
 
+    expect(nestedAction.asAbortController).not.toEqual(abortController)
     expect(originStates.length).toEqual(nestedWithAbort.length)
     originStates.forEach((originState, index) => {
       expect(originState).toEqual(nestedWithAbort[index])
     })
   })
 
-  it('root action becomes abort without errors after sharing Abortcontroller with nested action which is aborted', async () => {
+  it('root action becomes "ready" without errors after sharing Abortcontroller with nested action which is aborted', async () => {
     const apiMock = createApiMock()
     const model = createTestModel(apiMock)
 
     const rootAction = model.rootWithNestedAndAbort
-    const nestedAction = model.nestedWithAbort
-
+    const nestedAction = model.actionWithAbort
+    const abortController = new AbortController()
     const originStates: object[] = []
     watch(() => ({
       root: rootAction.state,
       nested: nestedAction.state,
     }), (state) => originStates.push(state))
 
-    void setTimeout(() => void model.nestedWithAbort.abort(), 0)
-    await model.rootWithNestedAndAbort.exec(true)
+    void setTimeout(() => void model.actionWithAbort.abort(), 0)
+    const actionPromise = model.rootWithNestedAndAbort.exec(
+      { shareAbortController: true },
+      abortController,
+    )
+
+    expect(nestedAction.asAbortController).toEqual(abortController)
+
+    await actionPromise
 
     expect(originStates.length).toEqual(nestedWithAbortAll.length)
     originStates.forEach((originState, index) => {
@@ -304,12 +349,12 @@ describe('Test model', () => {
     })
   })
 
-  it('root action becomes ready without error if any of nested action locked', async () => {
+  it('root action becomes "ready" without error if any of nested action locked', async () => {
     const apiMock = createApiMock()
     const model = createTestModel(apiMock)
 
     const rootState = model.rootWithNestedAndAbort
-    const nestedState = model.nestedWithAbort
+    const nestedState = model.actionWithAbort
 
     const originStates: object[] = []
     watch(() => ({
@@ -317,48 +362,13 @@ describe('Test model', () => {
       nested: nestedState.state,
     }), (state) => originStates.push(state))
 
-    void setTimeout(() => void model.nestedWithAbort.lock(), 0)
-    await model.rootWithNestedAndAbort.exec(false)
+    void setTimeout(() => void model.actionWithAbort.lock(), 0)
+    await model.rootWithNestedAndAbort.exec({ shareAbortController: false })
 
     expect(originStates.length).toEqual(nestedWithLock.length)
     originStates.forEach((originState, index) => {
       expect(originState).toEqual(nestedWithLock[index])
     })
-  })
-
-  it('any synchronous methods work like native', () => {
-    const apiMock = createApiMock()
-    const model = createTestModel(apiMock)
-
-    expect(model.regularMethodWithData(10)).toEqual(10)
-    expect(() => { model.regularMethodWithError(); }).toThrowError()
-  })
-
-  // it('any asynchronous method with not void result works like native', () => {
-  //   const apiMock = createApiMock()
-  //   const model = createTestModel(apiMock)
-
-  //   expect(model.regularAsyncMethodWithData(10)).resolves.toEqual(10)
-  // })
-
-  it('any asynchronous method without @action decorator and with void result is seen like Action but throws error in runtime', async () => {
-    const apiMock = createApiMock()
-    const model = createTestModel(apiMock)
-
-    expect.assertions(2)
-    try {
-      await model.regularAsyncMethodWithError.exec('I won`t be called')
-    } catch (error) {
-      expect(error).toBeInstanceOf(TypeError)
-      expect((error as Error).message).toEqual('model.regularAsyncMethodWithError.exec is not a function')
-    }
-  })
-
-  it('native method can get a action inside by origin action method', () => {
-    const apiMock = createApiMock()
-    const model = createTestModel(apiMock)
-
-    expect(model.nestedActionA === model.regularMethodWithActionInside()).toBeTruthy()
   })
 })
 

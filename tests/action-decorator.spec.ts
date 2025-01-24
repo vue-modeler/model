@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, vi, Mock } from 'vitest'
-import { action } from '../../src/decorator/action'
-import { ProtoModel } from '../../src/proto-model'
-import { Action } from '../../src/action'
-import { ActionPublic, OriginalMethodWrapper } from '../../src/types'
+import { action } from '../src/decorator/action'
+import { ProtoModel } from '../src/proto-model'
+import { Action } from '../src/action'
+import { ActionPublic, OriginalMethodWrapper } from '../src/types'
 
 
 class TestProtoModel extends ProtoModel {
@@ -14,7 +14,7 @@ class TestProtoModel extends ProtoModel {
   }
 }
 
-describe('action decorator', () => {
+describe('Action decorator', () => {
 
   let mockTarget: TestProtoModel
   
@@ -23,7 +23,7 @@ describe('action decorator', () => {
   })
 
 
-  it('should create new method and save original into Action.actionFlag', () => {
+  it('creates new method and save original into Action.actionFlag', () => {
     const proto = Object.getPrototypeOf(mockTarget) as TestProtoModel
     const descriptor = Object.getOwnPropertyDescriptor(proto, 'testAction')
     if (!descriptor) {
@@ -44,7 +44,7 @@ describe('action decorator', () => {
     expect(typeof (descriptor.value as OriginalMethodWrapper<[]>)[Action.actionFlag]).toBe('function')
   })
 
-  it('should throw error if target is not ProtoModel', () => {
+  it('throws error if target is not ProtoModel', () => {
     class TestNativeModel {
       testAction(): Promise<void> {
         return Promise.resolve()
@@ -66,7 +66,7 @@ describe('action decorator', () => {
     )).toThrow('Target is not instance of ProtoModel')
   })
 
-  it('should throw error if action name is not string', () => {
+  it('throws error if action name is not string', () => {
     const actionName = Symbol('testAction')
     class TestNativeModel {
       [actionName](): Promise<void> {
@@ -89,7 +89,7 @@ describe('action decorator', () => {
     )).toThrow('Action name is not a string')
   })
 
-  it('should throw error if descriptor value is not function', () => {
+  it('throws error if descriptor value is not function', () => {
     const descriptor = Object.getOwnPropertyDescriptor(mockTarget, 'property')
     if (!descriptor) {
       throw new Error('Descriptor is not defined')
@@ -113,7 +113,8 @@ describe('Original method wrapper ', () => {
       exec: vi.fn(),
       is: vi.fn(),
       name: 'testAction',
-      state: Action.state.ready,
+      state: Action.possibleState.ready,
+      possibleStates: Object.values(Action.possibleState),
       asAbortController: null,
       asPromise: null,
       asError: null,
@@ -134,7 +135,7 @@ describe('Original method wrapper ', () => {
     mockTarget.action = vi.fn().mockReturnValue(actionMock)
   })
 
-  it('should get action and call exec with original method args', async () => {
+  it('gets action and calls exec with original method args', async () => {
     const proto = Object.getPrototypeOf(mockTarget) as TestProtoModel
     const descriptor = Object.getOwnPropertyDescriptor(proto, 'testAction')
     if (!descriptor) {

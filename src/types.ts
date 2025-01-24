@@ -10,13 +10,14 @@ export interface OriginalMethodWrapper<Args extends unknown[] = unknown[]> {
   [Action.actionFlag]: OriginalMethod
 }
 
-export type ActionStateName = keyof typeof Action.state
+export type ActionStateName = keyof typeof Action.possibleState
 
+export type ProtectedMethodInModel = 'action' | 'setActionState'
 export type Model<T> = {
   [K in keyof T]:
     T[K] extends ((...args: infer Args) => Promise<void>)
       ? Action<Args>
-      : K extends 'action'
+      : K extends ProtectedMethodInModel
         ? never
         : T[K]
 }

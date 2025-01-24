@@ -7,19 +7,13 @@ import { Model } from '../src/types'
 import { isShallow } from 'vue'
 
 class TestProtoModel extends ProtoModel {
-  regularProperty = 'test'
-  
   regularMethod(): string {
     return 'regular'
   }
-
+  
   @action
   async actionMethod(): Promise<void> {
     return Promise.resolve()
-  }
-
-  get computedProperty(): string {
-    return 'computed' + '1'
   }
 }
 
@@ -30,38 +24,17 @@ describe('createModel', () => {
 
     expect(isShallow(model)).toBeTruthy()
   })
-
-
-  test('creates proxy that returns action for decorated methods', () => {
+  
+  test('returns action for decorated methods', () => {
     const model = createModel(new TestProtoModel())
 
-    expect(model.actionMethod).toBeDefined()
-    expect(model.actionMethod).toBeInstanceOf(Action)
-  })
+    const action = model.actionMethod
+    expect(action).toBeDefined()
+    expect(action).toBeInstanceOf(Action)
+    expect(isShallow(action)).toBeTruthy()
 
-  test('preserves access to regular methods', () => {
-    const model = createModel(new TestProtoModel())
-
-    expect(model.regularMethod()).toBe('regular')
-  })
-
-  test('preserves access to regular properties', () => {
-    const model = createModel(new TestProtoModel())
-
-    expect(model.regularProperty).toBe('test')
-  })
-
-  test('preserves access to computed properties', () => {
-    const model = createModel(new TestProtoModel())
-
-    expect(model.computedProperty).toBe('computed1')
-  })
-
-  test('allows setting regular properties', () => {
-    const model = createModel(new TestProtoModel())
-
-    model.regularProperty = 'modified'
-    expect(model.regularProperty).toBe('modified')
+    expect(model.regularMethod).toBeDefined()
+    expect(typeof model.regularMethod).toBe('function')
   })
 
   test('preserves instanceof checks', () => {

@@ -21,13 +21,11 @@ export class TestProtoModel extends ProtoModel {
 
     this._counter.value = initCounterValue
 
-    this._computedFromConstructor = this.computed(
-      () => {
-        this.watchers.computedInConstructor()
+    this._computedFromConstructor = this.computed(() => {
+      this.watchers.computedInConstructor()
 
-        return this._counter.value * 2
-      },
-    )
+      return this._counter.value * 2
+    })
 
     this.watch(
       () => this._counter.value,
