@@ -61,8 +61,8 @@ export class TestProtoModel extends ParentProtoModel {
 
   @action async rootErrorAction (): Promise<void> {
     await this.nestedActionA()
-    // inside this action an error will be thrown and the action  will get the Error status.
-    // But the current action will be completed successfully
+    // Error will be thrown inside singleErrorAction and it will get the Error status.
+    // But rootErrorAction action will be completed successfully
     // and will receive the “Ready” status.
     //
     // If it is necessary for the current action to receive an error status,
