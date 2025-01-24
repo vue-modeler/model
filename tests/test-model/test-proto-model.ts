@@ -55,8 +55,6 @@ export class TestProtoModel extends ParentProtoModel {
   }
 
   @action async rootSuccessAction (): Promise<void> {
-    console.log('rootSuccessAction')
-
     await this.nestedActionA()
     await this.nestedActionB()
   }
