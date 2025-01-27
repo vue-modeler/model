@@ -1,5 +1,10 @@
-import { Action } from '../action'
-
+/**
+ * IMPORTANT: this class looks like error,
+ * but it is an exception in the correct terminology "errors vs exceptions".
+ * 
+ * In other words, this is a class of errors that must be handled
+ * and displayed to the user as messages in UI layer.
+ */
 export class ActionError extends Error {
   constructor (
     protected actionName: string,
@@ -10,20 +15,16 @@ export class ActionError extends Error {
     this.name = this.constructor.name
   }
 
-  for (action: Action): boolean {
-    return action.name === this.actionName
-  }
-
-  throwCause (): void {
-    throw this.cause
-  }
-
   get cause (): Error {
     return this.options.cause
   }
-
+  
   get message () : string {
     return this.toString()
+  }
+  
+  throwCause (): void {
+    throw this.cause
   }
 
   toString (): string {

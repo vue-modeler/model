@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, test } from 'vitest'
 import { Action } from '../src/action'
-import { ActionInternalException } from '../src/error/action-internal-exception'
+import { ActionInternalError } from '../src/error/action-internal-error'
 import { OriginalMethodWrapper } from '../src/types'
 import { TestProtoModel } from './test-model/test-proto-model'
 import { createApiMock } from './test-model/create-api-mock'
@@ -46,8 +46,8 @@ describe('Action constructor', () => {
       // eslint-disable-next-line @typescript-eslint/unbound-method
       new Action(protoModel, protoModel.normalSyncMethodWithData as never as OriginalMethodWrapper<[]>)
     } catch (error) {
-      expect(error).toBeInstanceOf(ActionInternalException)
-      expect((error as ActionInternalException).message).toBe('Method normalSyncMethodWithData is not action')
+      expect(error).toBeInstanceOf(ActionInternalError)
+      expect((error as ActionInternalError).message).toBe('Method normalSyncMethodWithData is not action')
     }
   })
 
@@ -61,8 +61,8 @@ describe('Action constructor', () => {
        
       new Action(protoModel, someFunction as never as OriginalMethodWrapper<[]>)
     } catch (error) {
-      expect(error).toBeInstanceOf(ActionInternalException)
-      expect((error as ActionInternalException).message).toBe('Model does not contain method someFunction')
+      expect(error).toBeInstanceOf(ActionInternalError)
+      expect((error as ActionInternalError).message).toBe('Model does not contain method someFunction')
     }
   })
 })
