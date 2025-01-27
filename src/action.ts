@@ -1,8 +1,7 @@
 import { ActionError } from './error/action-error'
-import { ActionInternalException } from './error/action-internal-exception'
+import { ActionInternalError } from './error/action-internal-error'
 import { ActionStatusConflictError } from './error/action-status-conflict-error'
 import { ActionUnexpectedAbortError } from './error/action-unexpected-abort-error'
-import { NestedActionError } from './error/nested-action-error'
 import { ProtoModel } from './proto-model'
 import { ActionStateName, OriginalMethodWrapper } from './types'
 
@@ -15,7 +14,7 @@ interface ActionPendingValue {
   abortController: AbortController
 }
 
-type ActionValue = ActionPendingValue | ActionError | NestedActionError | null
+type ActionValue = ActionPendingValue | ActionError | null
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export class Action<Args extends any[] = unknown[]> {
@@ -43,11 +42,11 @@ export class Action<Args extends any[] = unknown[]> {
 
     const isModelMethod = name in model && typeof (model as unknown as Record<string, unknown>)[name] === 'function'
     if (!isModelMethod) {
-      throw new ActionInternalException(`Model does not contain method ${name}`)
+      throw new ActionInternalError(`Model does not contain method ${name}`)
     }
 
     if (typeof actionFunction[Action.actionFlag] !== 'function') {
-      throw new ActionInternalException(`Method ${name} is not action`)
+      throw new ActionInternalError(`Method ${name} is not action`)
     }
 
     this.name = name
@@ -184,7 +183,7 @@ export class Action<Args extends any[] = unknown[]> {
         this.ready()
       })
       .catch((originalError: unknown) => {
-        const shouldThrowAsIs = originalError instanceof ActionInternalException
+        const shouldThrowAsIs = originalError instanceof ActionInternalError
           || originalError instanceof RangeError
           || originalError instanceof ReferenceError
           || originalError instanceof SyntaxError
@@ -220,13 +219,12 @@ export class Action<Args extends any[] = unknown[]> {
 
         // If an action throws an error, we wrap it in an ActionError and
         // store it as the action's state.
-        // Then we throw the ActionError at the next level.
-        // At the highest level, error throwing  will be blocked.
         // For this reason try|catch will not work.
-        // To catch an action error outside the model, we must use "if" statement
-        // after waiting for the action promise or use "watcher" by the action state.
+        // To handle an error outside the model or in the parent action,
+        // you should use "if" statement after waiting for the action promise
+        // or use "watcher" by the action state.
         // 
-        // For example:
+        // Example:
         //      
         // await model.someAction.exec()
         // if (model.someAction.error?.cause) {
@@ -245,11 +243,7 @@ export class Action<Args extends any[] = unknown[]> {
         //    handleError(error.cause)
         //  }
         // )
-        const actionError = originalError instanceof ActionError
-          ? new NestedActionError(this.name, { cause: originalError })
-          : new ActionError(this.name, { cause: originalError as Error })
-
-        this.setError(actionError)
+        this.setError(new ActionError(this.name, { cause: originalError as Error }))
       })
       
     this._value = {
@@ -296,7 +290,7 @@ export class Action<Args extends any[] = unknown[]> {
     return this.ready()
   }
 
-  protected setError (error: ActionError | NestedActionError): this {
+  protected setError (error: ActionError): this {
     if (!this.isPending) {
       throw new ActionStatusConflictError(
         this.name,

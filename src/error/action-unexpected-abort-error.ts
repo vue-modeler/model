@@ -1,7 +1,7 @@
 import { ActionStateName } from '../types'
-import { ActionInternalException } from './action-internal-exception'
+import { ActionInternalError } from './action-internal-error'
 
-export class ActionUnexpectedAbortError extends ActionInternalException {
+export class ActionUnexpectedAbortError extends ActionInternalError {
   constructor (actionName: string, currentState: ActionStateName) {
     super(`Unexpected AbortError for the action ${actionName} in state ${currentState}`)
 

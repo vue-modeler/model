@@ -1,15 +1,12 @@
-import { computed, ComputedGetter, ComputedRef, DebuggerOptions, effectScope, Ref, ref, ShallowReactive, shallowReactive, shallowRef, watch, WatchStopHandle } from 'vue'
+import { computed, ComputedGetter, ComputedRef, DebuggerOptions, effectScope, Ref, ref, ShallowReactive, shallowReactive, watch, WatchStopHandle } from 'vue'
 
 import { Action } from './action'
-import { ModelError } from './error/model-error'
 import { ActionPublic, ActionStateName, OriginalMethodWrapper } from './types'
 
 
 type ModelConstructor = new (...args: any[]) => ProtoModel
 
 export abstract class ProtoModel {
-  // @deprecated
-  protected _error = shallowRef<ModelError | null>(null)
   // each model has its own effect scope to avoid memory leaks
   protected _effectScope = effectScope(true)
 
