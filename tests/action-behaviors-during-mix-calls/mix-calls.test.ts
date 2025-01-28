@@ -172,8 +172,8 @@ describe('Test model', () => {
     const actionError = model.singleErrorAction.error
 
     expect(actionError).toBeInstanceOf(ActionError)
-    expect(actionError?.message).toEqual('Action singleErrorAction throw error')
-    expect(actionError?.cause).toEqual(new Error())
+    expect(actionError?.message).toEqual('message')
+    expect(actionError?.cause).toEqual(new Error('message'))
   })
 
   it('calls two nested actions from single root without error', async () => {
@@ -225,8 +225,8 @@ describe('Test model', () => {
     const nestedError = model.singleErrorAction.error
 
     expect(nestedError).toBeInstanceOf(ActionError)
-    expect(nestedError?.message).toEqual('Action singleErrorAction throw error')
-    expect(nestedError?.cause).toEqual(new Error())
+    expect(nestedError?.message).toEqual('message')
+    expect(nestedError?.cause).toEqual(new Error('message'))
   })
   
   it('calls several independente actions in parallel without error', async () => {

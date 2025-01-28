@@ -51,7 +51,7 @@ export class TestProtoModel extends ParentProtoModel {
   }
 
   @action async singleErrorAction (): Promise<void> {
-    return Promise.reject(new Error())
+    return Promise.reject(new Error('message'))
   }
 
   @action async rootSuccessAction (): Promise<void> {

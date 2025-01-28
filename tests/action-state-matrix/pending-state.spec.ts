@@ -20,7 +20,13 @@ describe('Action in PENDING state', () => {
     validatePendingState(model.singleErrorAction)
     await promise
 
-    validateErrorState(model.singleErrorAction, new ActionError(model.singleErrorAction.name, { cause: new Error() }))
+    validateErrorState(
+      model.singleErrorAction,
+      new ActionError(
+        model.singleErrorAction.name,
+        { cause: new Error('message') }
+      )
+    )
   })
 
   it('goes to LOCK state after call lock method', async () => {
