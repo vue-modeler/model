@@ -80,10 +80,6 @@ export abstract class ProtoModel {
     return refToStateFlag
   }
 
-  hasActionInState(state: ActionStateName): boolean {
-    return !!this.getActionStatesRef(state).value
-  }
-
   /**
    * It is public method in context ProtoModel,
    * but in Model<ProtoModel> context it is protected method
