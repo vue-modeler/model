@@ -28,6 +28,11 @@ describe('Action in READY state', () => {
     validateReadyState(model.successActionWithoutArgs as ActionPublic)
   })
 
+  it('throws error when trying to call resetError', () => {
+    expect(() => model.successActionWithoutArgs.resetError()).toThrow('Trying to update state of successActionWithoutArgs from ready to ready')
+    validateReadyState(model.successActionWithoutArgs as ActionPublic)
+  })
+
   it('allows to call abort without errors', () => {
     expect(() => model.successActionWithoutArgs.abort()).not.toThrow()
     validateReadyState(model.successActionWithoutArgs as ActionPublic)

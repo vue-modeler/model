@@ -29,4 +29,9 @@ describe('Action in LOCK state', () => {
     await expect(model.singleErrorAction.abort()).resolves.toBeUndefined()
     validateLockState(model.singleErrorAction as ActionPublic)
   })
+
+  it('throws error when trying to call resetError', () => {
+    expect(() => model.singleErrorAction.resetError()).toThrow('Trying to update state of singleErrorAction from lock to ready')
+    validateLockState(model.singleErrorAction as ActionPublic)
+  })
 })
