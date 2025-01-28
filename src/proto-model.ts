@@ -42,14 +42,6 @@ export abstract class ProtoModel {
     return watchStopHandler
   }
 
-  protected stopWatching (stopHandler: WatchStopHandle):void {
-    if (this._unwatchers.has(stopHandler)) {
-      this._unwatchers.delete(stopHandler)
-    }
-
-    stopHandler()
-  }
-
   protected computed<T> (getter: ComputedGetter<T>, debugOptions?: DebuggerOptions): ComputedRef<T> {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore:next-line
