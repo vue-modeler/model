@@ -26,7 +26,7 @@ describe('Action in PENDING state', () => {
   it('goes to LOCK state after call lock method', async () => {
     // Action in Pending state has the promise as internal value.
     // To go into the lock state we should abort current operation and thus reject the promise.
-    // That`s why we use model.nestedWithAbort. This method can be aborterd.
+    // We use model.nestedWithAbort because it emulate abort by signal.
      
     const actionPromise = model.actionWithAbort.exec()
     validatePendingState(model.actionWithAbort as ActionPublic)
@@ -67,4 +67,14 @@ describe('Action in PENDING state', () => {
     await promise
     validateReadyState(model.successActionWithoutArgs as ActionPublic)
   })
+
+  it('throws error when trying to call resetError', async () => {
+    const promise = model.successActionWithoutArgs.exec()
+    expect(() => model.successActionWithoutArgs.resetError()).toThrow('Trying to update state of successActionWithoutArgs from pending to ready')
+    validatePendingState(model.successActionWithoutArgs as ActionPublic)
+    await promise
+    validateReadyState(model.successActionWithoutArgs as ActionPublic)
+  })
+
 })
+
