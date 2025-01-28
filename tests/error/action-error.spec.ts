@@ -11,8 +11,9 @@ describe('ActionError', () => {
     expect(error).toBeInstanceOf(Error)
     expect(error).toBeInstanceOf(ActionError)
     expect(error.name).toBe('ActionError')
-    expect(error.message).toBe('Action testAction throw error')
     expect(error.cause).toBe(cause)
+    expect(error.message).toBe(cause.message)
+    expect(error.toString()).toBe(cause.message)
   })
 
   test('throwCause throws the original cause', () => {

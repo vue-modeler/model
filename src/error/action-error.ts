@@ -10,17 +10,13 @@ export class ActionError extends Error {
     protected actionName: string,
     protected options: { cause: Error },
   ) {
-    super(`Action ${actionName} throw error`)
+    super(options.cause.message)
 
     this.name = this.constructor.name
   }
 
   get cause (): Error {
     return this.options.cause
-  }
-  
-  get message () : string {
-    return this.toString()
   }
   
   throwCause (): void {

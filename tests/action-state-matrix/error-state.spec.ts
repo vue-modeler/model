@@ -26,7 +26,13 @@ describe('Action in ERROR state', () => {
     validatePendingState(model.singleErrorAction as ActionPublic)
 
     await promise
-    validateErrorState(model.singleErrorAction as ActionPublic, new ActionError(model.singleErrorAction.name, { cause: new Error() }))
+    validateErrorState(
+      model.singleErrorAction as ActionPublic,
+      new ActionError(
+        model.singleErrorAction.name,
+        { cause: new Error('message') }
+      )
+    )
   })
 
   it('can go to READY state', () => {

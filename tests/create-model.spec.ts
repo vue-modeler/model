@@ -51,4 +51,15 @@ describe('createModel', () => {
     const typedModel: Model<TestProtoModel> = model
     expect(typedModel).toBe(model)
   })
+  
+  test('throws error when wrapped instance is not ProtoModel', () => {
+    class NotProtoModel {
+      regularMethod(): string {
+        return 'regular'
+      }
+    }
+
+    const fakeProtoModel = new NotProtoModel()
+    expect(() => createModel(fakeProtoModel as never as ProtoModel)).toThrow('ProtoModel instance is required')
+  })
 }) 
