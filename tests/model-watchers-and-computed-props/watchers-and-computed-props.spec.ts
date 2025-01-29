@@ -20,6 +20,7 @@ const createWatcherMocks = (): WatcherMock => ({
   computedInConstructor: vi.fn(),
 })
 
+
 describe('Test model', () => {
   
   test('computes proprerty defined as ComputedRef in constructor', () => {
