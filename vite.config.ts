@@ -1,6 +1,8 @@
 import { resolve } from 'path'
 import { defineConfig } from 'vite'
 import dts from 'vite-plugin-dts'
+import { coverageConfigDefaults } from 'vitest/config'
+
 
 export default defineConfig({
   plugins: [
@@ -12,6 +14,12 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "jsdom",
+    coverage: {
+      exclude: [
+        '**/index.ts',
+        ...coverageConfigDefaults.exclude
+      ],
+    },
   },
   build: {
     minify: true,
