@@ -189,7 +189,8 @@ export class Action<Args extends any[] = unknown[]> {
           || originalError instanceof SyntaxError
           || originalError instanceof TypeError
           || originalError instanceof URIError
-
+          || originalError instanceof EvalError
+        
         if (shouldThrowAsIs) {
           throw originalError
         }
@@ -306,13 +307,13 @@ export class Action<Args extends any[] = unknown[]> {
   }
 
   protected ready (): this {
-    if (this.isError) {
-      throw new ActionStatusConflictError(
-        this.name,
-        this.state,
-        Action.possibleState.ready,
-      )
-    }
+    // if (this.isError) {
+    //   throw new ActionStatusConflictError(
+    //     this.name,
+    //     this.state,
+    //     Action.possibleState.ready,
+    //   )
+    // }
 
     this.state = Action.possibleState.ready
 

@@ -14,8 +14,8 @@ describe('Action in READY state', () => {
   })
 
   it('goes to PENDING state', () => {
-    expect(() => model.successActionWithoutArgs.exec()).not.toThrow()
-    validatePendingState(model.successActionWithoutArgs as ActionPublic)
+    const promise = model.successActionWithoutArgs.exec()
+    validatePendingState(model.successActionWithoutArgs as ActionPublic, [], promise)
   })
 
   it('goes to LOCK state', () => {
