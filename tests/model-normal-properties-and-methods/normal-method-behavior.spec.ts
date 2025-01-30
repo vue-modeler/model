@@ -1,8 +1,9 @@
 import { describe, expect, test } from 'vitest'
 import { createApiMock } from '../test-model/create-api-mock'
 import { createTestModel } from '../test-model/create-test-model'
+import { Action } from '../../src/action'
   
-describe('Asynchronous method', () => {
+describe('Normal asynchronous method', () => {
   
   test('without @action decorator and with void result is seen like Action but throws error in runtime', async () => {
     expect.assertions(3)
@@ -19,7 +20,7 @@ describe('Asynchronous method', () => {
     }
   })
 
-  test('with not void result works as usual', async () => {
+  test('without @action decorator and with not void result works as usual', async () => {
     expect.assertions(4)
     const apiMock = createApiMock()
     const model = createTestModel(apiMock)
@@ -36,6 +37,30 @@ describe('Asynchronous method', () => {
       expect(error).toEqual(new Error('I will be called'))
     }
   })
+  
+  test('with @action decorator and with not void result return undefined', async () => {
+    expect.assertions(1)
+    const apiMock = createApiMock()
+    const model = createTestModel(apiMock)
+
+    // eslint-disable-next-line @typescript-eslint/unbound-method, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
+    const result = await model.normalAsyncMethodWithReturnDataAsAction.exec(10)
+    expect(result).toBeUndefined()
+  })
+
+  test('with @action decorator and with not void result look like normal method but it is Action', async () => {
+    expect.assertions(2)
+    const apiMock = createApiMock()
+    const model = createTestModel(apiMock)
+
+    expect(model.normalAsyncMethodWithReturnDataAsAction).instanceOf(Action)
+  
+    try {
+      await model.normalAsyncMethodWithReturnDataAsAction(10)
+    } catch (error) {
+      expect(error).toEqual(new TypeError('model.normalAsyncMethodWithReturnDataAsAction is not a function'))
+    }
+  })
 })
 
 test('Synchronous method works as usual', () => {
@@ -49,6 +74,18 @@ test('Synchronous method works as usual', () => {
   expect(model.normalSyncMethodWithData(10)).toEqual(10)
   expect(model.normalSyncMethodFromParent(10)).toEqual(10)
   expect(() => { model.normalSyncMethodWithError(); }).toThrowError()
+})
+describe('Synchronous method with @action decorator', () => {
+  test('look like normal method but it is Action', async () => {
+    const apiMock = createApiMock()
+    const model = createTestModel(apiMock)
+  
+    expect(model.normalSyncMethodWithReturnDataAsAction).instanceOf(Action)
+    // eslint-disable-next-line @typescript-eslint/unbound-method, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
+    const result = await model.normalSyncMethodWithReturnDataAsAction.exec()
+    expect(result).toEqual(1)
+  })
+  
 })
 
 test('Action accessable inside any normal method', () => {

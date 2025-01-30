@@ -54,6 +54,12 @@ export class TestProtoModel extends ParentProtoModel {
     return Promise.reject(new Error('message'))
   }
 
+  @action async actionWithCustomError (error: Error): Promise<void> {
+    await new Promise((resolve, reject) => {
+      reject(error)
+    })
+  }
+
   @action async rootSuccessAction (): Promise<void> {
     await this.nestedActionA()
     await this.nestedActionB()
@@ -139,6 +145,13 @@ export class TestProtoModel extends ParentProtoModel {
     return Promise.reject(new Error(message))
   }
 
+  @action async normalAsyncMethodWithReturnDataAsAction (data: number): Promise<number> {
+    return Promise.resolve(data)
+  }
+
+  @action normalSyncMethodWithReturnDataAsAction (): number {
+    return 1
+  }
   /**
    * All methods below are not considered as Actions
    * because an Action is an asynchronous method with void result.
@@ -168,7 +181,7 @@ export class TestProtoModel extends ParentProtoModel {
    * But inside normal method you can take a Action as object to get it state.
    * Use for it  this.action(this.some Action)
    */
-    normalSyncMethodWithActionInside (): ShallowReactive<ActionPublic> {
+  normalSyncMethodWithActionInside (): ShallowReactive<ActionPublic> {
     // eslint-disable-next-line @typescript-eslint/unbound-method
     return this.action(this.nestedActionA as OriginalMethodWrapper<[]>)
   }

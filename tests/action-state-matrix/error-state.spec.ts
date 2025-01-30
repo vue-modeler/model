@@ -23,7 +23,7 @@ describe('Action in ERROR state', () => {
 
   it('can go to PENDING state', async () => {
     const promise = model.singleErrorAction.exec()
-    validatePendingState(model.singleErrorAction as ActionPublic)
+    validatePendingState(model.singleErrorAction as ActionPublic, [], promise)
 
     await promise
     validateErrorState(

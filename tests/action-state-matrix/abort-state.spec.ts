@@ -18,8 +18,8 @@ describe('Action in ABORT state', () => {
 
   it('goes to PENDING state', () => {
     validateAbortState(model.actionWithAbort as ActionPublic, 'Abort reason')
-    expect(() => model.actionWithAbort.exec()).not.toThrow()
-    validatePendingState(model.actionWithAbort as ActionPublic)
+    const promise = model.actionWithAbort.exec()
+    validatePendingState(model.actionWithAbort as ActionPublic, [], promise)
   })
 
   it('goes to LOCK state', () => {
