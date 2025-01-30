@@ -34,9 +34,9 @@ describe('Action constructor', () => {
     expect(action.isLock).toBe(false)
     expect(action.isAbort).toBe(false)
     expect(action.error).toBe(null)
-    expect(action.asReason).toBe(null)
-    expect(action.asPromise).toBe(null)
-    expect(action.asAbortController).toBe(null)
+    expect(action.abortReason).toBe(null)
+    expect(action.promise).toBe(null)
+    expect(action.abortController).toBe(null)
     expect(action.args).toEqual([])
   })
 

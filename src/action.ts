@@ -70,7 +70,7 @@ export class Action<Args extends any[] = unknown[]> {
     this.model.setActionState(this as never as Action)
   }
 
-  get asAbortController (): null | AbortController {
+  get abortController (): null | AbortController {
     if (this.isPending) {
       return (this._value as ActionPendingValue).abortController
     }
@@ -83,19 +83,12 @@ export class Action<Args extends any[] = unknown[]> {
     return this._args || []
   }
 
-  get asPromise (): null | Promise<void> {
+  get promise (): null | Promise<void> {
     if (this.isPending) {
       return (this._value as ActionPendingValue).promise
     }
 
     return null
-  }
-
-  /**
-   * @deprecated use this.error
-   */
-  get asError (): null | ActionError {
-    return this.error
   }
 
   get error (): null | ActionError {
@@ -106,7 +99,7 @@ export class Action<Args extends any[] = unknown[]> {
     return null
   }
 
-  get asReason (): unknown {
+  get abortReason (): unknown {
     if (this.isAbort) {
       return (this._value as ActionPendingValue).abortController.signal.reason as unknown
     }
