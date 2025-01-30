@@ -329,8 +329,6 @@ export class Action<Args extends any[] = unknown[]> {
       )
     }
 
-    this.state = Action.possibleState.ready
-
-    return this
+    return this.ready()
   }
 }

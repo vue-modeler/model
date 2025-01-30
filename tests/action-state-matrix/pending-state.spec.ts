@@ -7,6 +7,7 @@ import { TestProtoModel } from '../test-model/test-proto-model'
 import { validateAbortState, validateErrorState, validateLockState, validatePendingState, validateReadyState } from './state-validator/state-validator'
 import { ActionInternalError } from '../../src/error/action-internal-error'
 import { ActionUnexpectedAbortError } from '../../src/error/action-unexpected-abort-error'
+import { ActionStatusConflictError } from '../../src/error/action-status-conflict-error'
 
 describe('Action in PENDING state', () => {
   let model: Model<TestProtoModel>
@@ -65,15 +66,6 @@ describe('Action in PENDING state', () => {
     expect(() => model.successActionWithoutArgs.exec()).toThrow('Trying to update state of successActionWithoutArgs from pending to pending')
     await promise
     validateReadyState(model.successActionWithoutArgs as ActionPublic)
-  })
-
-  it('throws UnexpectedAbortError if state changes during await abort promise', async () => {
-    const promise = model.actionWithAbort.exec()
-    const abortPromise = model.actionWithAbort.abort()
-    model.actionWithAbort._state  = 'ready'
-    await expect(abortPromise)
-      .rejects
-      .toThrow(new ActionUnexpectedAbortError('actionWithAbort', 'ready'))
   })
 
   it('throws error after trying unlock', async () => {
@@ -168,5 +160,21 @@ describe('Action in PENDING state', () => {
     
     await expect(promise).rejects.toThrow(new EvalError('message'))
   })
-})
 
+  it('throws UnexpectedAbortError if state changes during await abort promise', async () => {
+    const promise = model.actionWithAbort.exec()
+    const abortPromise = model.actionWithAbort.abort()
+    model.actionWithAbort._state  = 'ready'
+    await expect(abortPromise)
+      .rejects
+      .toThrow(new ActionUnexpectedAbortError('actionWithAbort', 'ready'))
+  })
+
+  it('throws ActionStatusConflictError if state changes during await exec promise with error', async () => {
+    const promise = model.actionWithCustomError.exec(new Error('message'))
+    model.actionWithCustomError._state = 'ready'
+    await expect(promise)
+      .rejects
+      .toThrow(new ActionStatusConflictError('actionWithCustomError', 'ready', 'error'))
+  })
+})
