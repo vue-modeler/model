@@ -162,7 +162,8 @@ describe('Action in PENDING state', () => {
   })
 
   it('throws UnexpectedAbortError if state changes during await abort promise', async () => {
-    const promise = model.actionWithAbort.exec()
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises
+    model.actionWithAbort.exec()
     const abortPromise = model.actionWithAbort.abort()
     model.actionWithAbort._state  = 'ready'
     await expect(abortPromise)

@@ -313,7 +313,7 @@ describe('Test model', () => {
       abortController,
     )
 
-    expect(nestedAction.asAbortController).not.toEqual(abortController)
+    expect(nestedAction.abortController).not.toEqual(abortController)
     expect(originStates.length).toEqual(nestedWithAbort.length)
     originStates.forEach((originState, index) => {
       expect(originState).toEqual(nestedWithAbort[index])
@@ -339,7 +339,7 @@ describe('Test model', () => {
       abortController,
     )
 
-    expect(nestedAction.asAbortController).toEqual(abortController)
+    expect(nestedAction.abortController).toEqual(abortController)
 
     await actionPromise
 
