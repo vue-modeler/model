@@ -165,7 +165,7 @@ describe('Action in PENDING state', () => {
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
     model.actionWithAbort.exec()
     const abortPromise = model.actionWithAbort.abort()
-    model.actionWithAbort._state  = 'ready'
+    Reflect.set(model.actionWithAbort, '_state', 'ready')
     await expect(abortPromise)
       .rejects
       .toThrow(new ActionUnexpectedAbortError('actionWithAbort', 'ready'))
@@ -173,7 +173,7 @@ describe('Action in PENDING state', () => {
 
   it('throws ActionStatusConflictError if state changes during await exec promise with error', async () => {
     const promise = model.actionWithCustomError.exec(new Error('message'))
-    model.actionWithCustomError._state = 'ready'
+    Reflect.set(model.actionWithCustomError, '_state', 'ready')
     await expect(promise)
       .rejects
       .toThrow(new ActionStatusConflictError('actionWithCustomError', 'ready', 'error'))
