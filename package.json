@@ -1,8 +1,8 @@
 {
   "type": "module",
   "name": "@vue-modeler/model",
-  "version": "1.0.0",
-  "description": "State manager for Vue",
+  "version": "1.0.1-beta.1",
+  "description": "A state management library based on models for Vue.js",
   "author": "abratko",
   "license": "MIT",
   "files": [
@@ -37,6 +37,8 @@
     "@vitest/coverage-v8": "2.1.3",
     "@vue/test-utils": "^1.3.6",
     "eslint": "^9.11.1",
+    "eslint-scope": "^8.2.0",
+    "eslint-visitor-keys": "^4.2.0",
     "jsdom": "^25.0.1",
     "semantic-release": "^24.2.0",
     "typescript": "^5.6.2",
@@ -48,7 +50,7 @@
   "peerDependencies": {
     "@vue-modeler/dc": "^2.1.0-beta",
     "vue": "^2.7"
-  },  
+  },
   "scripts": {
     "build": "tsc && vite build",
     "test": "vitest",
@@ -57,9 +59,19 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/vue-modeler/dc.git"
+    "url": "git+https://github.com/vue-modeler/modeler.git"
   },
   "bugs": {
-    "url": "https://github.com/vue-modeler/dc/issues"
-  }
+    "url": "https://github.com/vue-modeler/modeler/issues"
+  },
+  "directories": {
+    "test": "tests"
+  },
+  "keywords": [
+    "vue",
+    "model",
+    "state",
+    "manager"
+  ],
+  "homepage": "https://github.com/vue-modeler/modeler#readme",
 }
