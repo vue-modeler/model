@@ -9,18 +9,14 @@ Try it out! Level up your development process.
 ---
 
 ### Key Features
+
 - **No global state store**. No store means no problems. State is encapsulated within the model and is reactive. Outside the model, it's only accessible for reading and observation.
-- **Extremely simple API**: A model prototype is a standard class, actions are defined as standard methods with decorators. Create a model by calling a factory method—nothing more needed. Reactive properties and behavior are defined using the standard Vue API.
+- **Extremely simple API**: A model prototype is a standard class, actions are defined as standard methods with decorators. Create a model by calling a factory method — nothing more needed. Reactive properties and behavior are defined using the standard Vue API.
 - **Supports shared models**. A built-in model container ensures that a model remains in memory while being used. Unused models are automatically removed from the container.
 - **Follows DRY principle**. Actions have their own state. There's no need to write additional code to track action states. Focus instead on designing architecture and business logic.
 - **Embraces OOP**. Model prototypes are classes, supporting inheritance, encapsulation, polymorphism, and destructors.
 - **Complies with SOLID principles**. Encourages clean coding practices like composition of models, dependency injection via constructors, separation of interfaces, single responsibility, etc.
 - **Maintains type safety**. All code completion hints will work both inside and outside the context of the class.
-
----
-
-### Simple Example
-%%Check how it's done here: [https://pinia.vuejs.org/introduction.html#Basic-example%%](https://pinia.vuejs.org/introduction.html#Basic-example%%)
 
 ---
 
