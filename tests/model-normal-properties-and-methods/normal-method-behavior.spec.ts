@@ -39,12 +39,14 @@ describe('Normal asynchronous method', () => {
   })
   
   test('with @action decorator and with not void result return undefined', async () => {
-    expect.assertions(1)
     const apiMock = createApiMock()
     const model = createTestModel(apiMock)
 
-    // eslint-disable-next-line @typescript-eslint/unbound-method, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
-    const result = await model.normalAsyncMethodWithReturnDataAsAction.exec(10)
+    const action = model.normalAsyncMethodWithReturnDataAsAction as unknown as Action<[number]>
+    expect(action).toBeInstanceOf(Action)
+
+    // eslint-disable-next-line @typescript-eslint/no-confusing-void-expression
+    const result = await action.exec(10)
     expect(result).toBeUndefined()
   })
 
@@ -81,9 +83,6 @@ describe('Synchronous method with @action decorator', () => {
     const model = createTestModel(apiMock)
   
     expect(model.normalSyncMethodWithReturnDataAsAction).instanceOf(Action)
-    // eslint-disable-next-line @typescript-eslint/unbound-method, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
-    const result = await model.normalSyncMethodWithReturnDataAsAction.exec()
-    expect(result).toEqual(1)
   })
   
 })

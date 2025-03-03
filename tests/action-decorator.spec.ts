@@ -117,7 +117,6 @@ describe('Original method wrapper ', () => {
       possibleStates: Object.values(Action.possibleState),
       abortController: null,
       promise: null,
-      asError: null,
       error: null,
       abortReason: null,
       isPending: false,
