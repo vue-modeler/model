@@ -1,3 +1,10 @@
+## [1.0.3](https://github.com/vue-modeler/model/compare/v1.0.2...v1.0.3) (2025-03-31)
+
+
+### Bug Fixes
+
+* update package.json and vite.config.ts for module file naming conventions ([2955f49](https://github.com/vue-modeler/model/commit/2955f4953b9d2776697285f5f7a4085a157d1936))
+
 ## [1.0.2](https://github.com/vue-modeler/model/compare/v1.0.1...v1.0.2) (2025-03-31)
 
 ## [1.0.1](https://github.com/vue-modeler/model/compare/v1.0.0...v1.0.1) (2025-03-31)
