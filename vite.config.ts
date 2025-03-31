@@ -24,7 +24,7 @@ export default defineConfig({
   build: {
     minify: true,
     lib: {
-      fileName: 'index',
+      fileName: (format, entryName) => `${entryName}.${format}.js`,
       entry: {
         index: resolve(__dirname, 'src/index.ts'),
         decorator: resolve(__dirname, 'src/decorator/index.ts'),
