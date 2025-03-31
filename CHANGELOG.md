@@ -1,3 +1,10 @@
+## [1.0.4](https://github.com/vue-modeler/model/compare/v1.0.3...v1.0.4) (2025-03-31)
+
+
+### Bug Fixes
+
+* remove main and module entry points from package.json ([172906b](https://github.com/vue-modeler/model/commit/172906beb17178666648897d56ec6bccd96141b5))
+
 ## [1.0.3](https://github.com/vue-modeler/model/compare/v1.0.2...v1.0.3) (2025-03-31)
 
 
