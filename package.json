@@ -59,10 +59,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/vue-modeler/modeler.git"
+    "url": "git+https://github.com/vue-modeler/model.git"
   },
   "bugs": {
-    "url": "https://github.com/vue-modeler/modeler/issues"
+    "url": "https://github.com/vue-modeler/model/issues"
   },
   "directories": {
     "test": "tests"
@@ -73,5 +73,5 @@
     "state",
     "manager"
   ],
-  "homepage": "https://github.com/vue-modeler/modeler#readme"
+  "homepage": "https://github.com/vue-modeler/model#readme"
 }
