@@ -4,8 +4,6 @@
 
 A state management library based on models for [VUE.js.](VUE.js.) The extremely simple API serves single purpose — creating models. It preserves types, supports OOP, DRY, and SOLID principles.
 
-Try it out! Level up your development process.
-
 ---
 
 ### Key Features
