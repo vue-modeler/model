@@ -1,3 +1,10 @@
+## [1.0.5](https://github.com/vue-modeler/model/compare/v1.0.4...v1.0.5) (2025-03-31)
+
+
+### Bug Fixes
+
+* remove unnecessary name field from vite.config.ts ([a74235c](https://github.com/vue-modeler/model/commit/a74235c2dfac7dca79536d89009a66a1fbd96885))
+
 ## [1.0.4](https://github.com/vue-modeler/model/compare/v1.0.3...v1.0.4) (2025-03-31)
 
 
