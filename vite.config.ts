@@ -29,8 +29,7 @@ export default defineConfig({
         index: resolve(__dirname, 'src/index.ts'),
         decorator: resolve(__dirname, 'src/decorator/index.ts'),
         error: resolve(__dirname, 'src/error/index.ts'),
-      },
-      name: 'index'
+      }
     },
     rollupOptions: {
       external: ['vue'],
