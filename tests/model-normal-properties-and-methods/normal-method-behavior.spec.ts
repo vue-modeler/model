@@ -78,7 +78,7 @@ test('Synchronous method works as usual', () => {
   expect(() => { model.normalSyncMethodWithError(); }).toThrowError()
 })
 describe('Synchronous method with @action decorator', () => {
-  test('look like normal method but it is Action', async () => {
+  test('look like normal method but it is Action', () => {
     const apiMock = createApiMock()
     const model = createTestModel(apiMock)
   
