@@ -107,7 +107,9 @@ describe('Original method wrapper ', () => {
 
   let mockTarget: TestProtoModel
   let actionMock: ActionPublic
+  let actionProtectedMethodMock: Mock
   beforeEach(() => {
+
     mockTarget = new TestProtoModel()
     actionMock = {
       exec: vi.fn(),
@@ -131,7 +133,14 @@ describe('Original method wrapper ', () => {
       unlock: vi.fn(),
       resetError: vi.fn(),
     }
-    mockTarget.action = vi.fn().mockReturnValue(actionMock)
+    actionProtectedMethodMock = vi.fn().mockReturnValue(actionMock)
+    const proto = Object.getPrototypeOf(mockTarget) as TestProtoModel
+    Object.defineProperty(proto, 'action', {
+      value: actionProtectedMethodMock,
+      writable: false,
+      enumerable: false,
+      configurable: false
+    })
   })
 
   it('gets action and calls exec with original method args', async () => {
@@ -153,10 +162,9 @@ describe('Original method wrapper ', () => {
     Object.defineProperty(mockTarget, 'testAction', descriptor);
     
     await mockTarget.testAction(1, 'test')
-    // eslint-disable-next-line @typescript-eslint/unbound-method
-    expect(mockTarget.action).toHaveBeenCalled()
+    expect(actionProtectedMethodMock).toHaveBeenCalled()
 
-    const actionCallArg = (mockTarget.action as Mock).mock.calls[0][0] as OriginalMethodWrapper<[]>
+    const actionCallArg = (actionProtectedMethodMock).mock.calls[0][0] as OriginalMethodWrapper<[]>
     expect(actionCallArg).toBe(originalMethodWrapper)
     expect(actionCallArg[Action.actionFlag]).toBe(originalMethod)
     
