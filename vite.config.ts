@@ -24,12 +24,10 @@ export default defineConfig({
   build: {
     minify: true,
     lib: {
-      fileName: (format, entryName) => `${entryName}.${format}.js`,
-      entry: {
-        index: resolve(__dirname, 'src/index.ts'),
-        decorator: resolve(__dirname, 'src/decorator/index.ts'),
-        error: resolve(__dirname, 'src/error/index.ts'),
-      }
+      fileName: 'index',
+      entry: resolve(__dirname, 'src/index.ts'),
+      name: 'index'
+    
     },
     rollupOptions: {
       external: ['vue'],
