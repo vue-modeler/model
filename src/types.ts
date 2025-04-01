@@ -1,4 +1,3 @@
-
 import { Action } from './action'
 import { ProtoModel } from './proto-model'
 
@@ -22,11 +21,12 @@ export type Model<T> = {
         : T[K]
 }
 
-export interface ModelAdapterProxyConstructor {
-  new <Target extends ProtoModel>(target: Target, handler: ProxyHandler<Target>): Model<Target>
-}
+export type ModelAdapterProxyConstructor = new <Target extends ProtoModel>(
+  target: Target,
+  handler: ProxyHandler<Target>
+) => Model<Target>
 
-export type ModelConstructor<T extends { new (...args: any[]): any }> = T extends { new (...args: any[]): infer R }
+export type ModelConstructor<T extends new (...args: unknown[]) => unknown> = T extends new (...args: unknown[]) => infer R
   ? R extends ProtoModel
     ? T
     : never

@@ -1,7 +1,8 @@
 import { computed, ComputedGetter, ComputedRef, DebuggerOptions, effectScope, Ref, ref, ShallowReactive, shallowReactive, watch, WatchStopHandle } from 'vue'
 
 import { Action } from './action'
-import { ActionPublic, ActionStateName, OriginalMethodWrapper } from './types'
+import { ActionPublic, ActionStateName, OriginalMethod, OriginalMethodWrapper } from './types'
+import { ActionInternalError } from './error'
 
 
 type ModelConstructor = new (...args: any[]) => ProtoModel
@@ -81,6 +82,58 @@ export abstract class ProtoModel {
   }
 
   /**
+   * Gets Action instance by wrapped original method or create Action instance.
+   * 
+   * From external context of model this method is implicitly used to get or create an action.
+   * It called inside get hook proxy of action.
+   * 
+   * ```ts
+   * class TestModel extends ProtoModel {
+   *   @action async testAction(): Promise<void> {
+   *     return Promise.resolve()
+   *   }
+   * }
+   * // hook catches 'testAction' property getting and call 'action' method 
+   * const result = testModel.testAction.exec()
+   * ```
+   * 
+   * In internal context of model this method is used to get Action instance.
+   * You can`t call it as `testModel.testAction.exec()` or `testModel.testAction.isPending` etc.
+   * because TypeScript sees it as  standard  method of model instance and you will get error about type.
+   * 
+   * To get Action instance in internal context of model you need to call it as `testModel.action(testModel.testAction)`
+   *
+   * ```ts
+   * class TestModel extends ProtoModel {
+   *   @action async testAction(): Promise<void> {
+   *     return Promise.resolve()
+   *   }
+   *   async otherAction(): Promise<void> {
+   *     ...
+   *     if (this.action(this.testAction).isPending) {
+   *       console.log('testAction is pending')
+   *     }
+   *     ...
+   *   }
+   * }
+   * ```
+   * This is reason why  the argument is defined as OriginalMethod | OriginalMethodWrapper.
+   * 
+   * @param originalMethod - defined as OriginalMethod or OriginalMethodWrapper.
+   * @returns action
+  */
+  protected action (originalMethod: OriginalMethod | OriginalMethodWrapper): ShallowReactive<ActionPublic> {
+    const isActionDecoratorApplied = Action.actionFlag in originalMethod
+      && typeof originalMethod[Action.actionFlag] === 'function'
+
+    if (!isActionDecoratorApplied) {
+      throw new ActionInternalError('Action decorator is not applied to the method')
+    }
+
+    return this._actions.get(originalMethod) || this.createAction(originalMethod)
+  }
+
+  /**
    * It is public method in context ProtoModel,
    * but in Model<ProtoModel> context it is protected method
    * 
@@ -106,20 +159,6 @@ export abstract class ProtoModel {
 
   isModelOf (typeModel: ModelConstructor): boolean {
     return this instanceof typeModel
-  }
-
-  /**
-  * This is an open method, but you won't be able to call it from outside the model
-  * because its argument is "OriginalMethodWrapper".
-  * "OriginalMethodWrapper" is not accessible from the outside,
-  * because the model is wrapped in a proxy and
-  * the "get" trap will always return an "Action" instead of "OriginalMethodWrapper".
-  * 
-  * @param originalMethod - method to create action for
-  * @returns action
-  */
-  action (originalMethod: OriginalMethodWrapper): ShallowReactive<ActionPublic> {
-    return this._actions.get(originalMethod) || this.createAction(originalMethod)
   }
 
   destructor (): void {
