@@ -11,18 +11,15 @@
   "exports": {
     ".": {
       "import": "./dist/index.es.js",
-      "require": "./dist/index.cjs.js"
-    },
-    "./decorator": {
-      "import": "./dist/decorator.es.js",
-      "require": "./dist/decorator.cjs.js"
-    },
-    "./error": {
-      "import": "./dist/error.es.js",
-      "require": "./dist/error.cjs.js"
+      "require": "./dist/index.cjs.js",
+      "types": "./dist/index.d.ts"
     }
   },
-  "types": "./dist/index.d.ts",
+  "typesVersions": {
+    "*": {
+      "*": ["./dist/*"]
+    }
+  },
   "publishConfig": {
     "access": "public"
   },
