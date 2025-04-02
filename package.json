@@ -8,18 +8,15 @@
   "files": [
     "dist"
   ],
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
   "exports": {
     ".": {
-      "import": "./dist/index.es.js",
-      "require": "./dist/index.cjs.js",
-      "types": "./dist/index.d.ts"
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
     }
   },
-  "typesVersions": {
-    "*": {
-      "*": ["./dist/*"]
-    }
-  },
+  "types": "./dist/index.d.ts",
   "publishConfig": {
     "access": "public"
   },
