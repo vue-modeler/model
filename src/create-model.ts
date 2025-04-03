@@ -2,9 +2,9 @@
 import { shallowReactive } from 'vue'
 import { Action } from './action'
 import { ProtoModel } from './proto-model'
-import { OriginalMethodWrapper, Model, ModelAdapterProxyConstructor } from './types'
+import { Model, ModelAdapterProxyConstructor, OriginalMethodWrapper } from './types'
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
+ 
 const ModelProxy = Proxy as ModelAdapterProxyConstructor
 
 export function createModel<Target extends ProtoModel> (
@@ -21,11 +21,13 @@ export function createModel<Target extends ProtoModel> (
         const targetProperty = Reflect.get(target, propName, receiver)
 
         const targetPropertyIsFunction = typeof targetProperty === 'function'
-        const targetPropertyIsAction =  targetPropertyIsFunction
+        const isActionDecoratorApplied =  targetPropertyIsFunction
           && Action.actionFlag in targetProperty
           && typeof targetProperty[Action.actionFlag] === 'function'
 
-        if (targetPropertyIsAction) {
+        if (isActionDecoratorApplied) {
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore
           return target.action(targetProperty as OriginalMethodWrapper)
         }
 
