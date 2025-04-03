@@ -213,7 +213,7 @@ export class Action<Args extends any[] = unknown[]> {
 
         // If an action throws an error, we wrap it in an ActionError and
         // store it as the action's state.
-        // For this reason try|catch will not work.
+        // For this reason external try|catch will not work.
         // To handle an error outside the model or in the parent action,
         // you should use "if" statement after waiting for the action promise
         // or use "watcher" by the action state.

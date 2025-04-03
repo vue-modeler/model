@@ -2,6 +2,7 @@ import { describe, expect, test } from 'vitest'
 import { createApiMock } from '../test-model/create-api-mock'
 import { createTestModel } from '../test-model/create-test-model'
 import { Action } from '../../src/action'
+import { ActionInternalError } from '../../src/error'
   
 describe('Normal asynchronous method', () => {
   
@@ -87,11 +88,21 @@ describe('Synchronous method with @action decorator', () => {
   
 })
 
-test('Action accessable inside any normal method', () => {
-  const apiMock = createApiMock()
-  const model = createTestModel(apiMock)
+describe('Action in internal context of model', () => {
+  test('action accessable inside any normal method', () => {
+    const apiMock = createApiMock()
+    const model = createTestModel(apiMock)
 
-  const action = model.normalSyncMethodWithActionInside()
+    const action = model.normalSyncMethodWithActionInside()
 
-  expect(action).toEqual(model.nestedActionA)
+    expect(action).toEqual(model.nestedActionA)
+  })
+
+  test('throw error when trying get the action by  method which is not decorated as action ', () => {
+    const apiMock = createApiMock()
+    const model = createTestModel(apiMock)
+
+    expect(() => { model.tryGetActionByMethod() })
+      .toThrowError(new ActionInternalError('Action decorator is not applied to the method'))
+  })
 })
