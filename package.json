@@ -40,7 +40,7 @@
     "vitest": "^2.1.9"
   },
   "peerDependencies": {
-    "@vue-modeler/dc": "^2.1.0-beta",
+    "@vue-modeler/dc": "^2.1.0",
     "vue": "^2.7"
   },
   "scripts": {
