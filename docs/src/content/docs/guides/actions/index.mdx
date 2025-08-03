@@ -1,0 +1,491 @@
+---
+title: Действия (Actions)
+description: Подробное руководство по созданию и использованию действий в Vue Modeler
+---
+
+# Действия (Actions)
+
+Действия - это асинхронные операции в Vue Modeler, которые могут находиться в различных состояниях и предоставляют богатый API для управления их жизненным циклом.
+
+## Создание действий
+
+Действия создаются с помощью декоратора `@action`:
+
+```typescript
+import { ProtoModel } from 'vue-modeler'
+import { action } from 'vue-modeler/decorator'
+
+export class UserModel extends ProtoModel {
+  users = []
+
+  @action async fetchUsers(): Promise<void> {
+    const response = await fetch('/api/users')
+    this.users = await response.json()
+  }
+
+  @action async createUser(userData: any): Promise<void> {
+    const response = await fetch('/api/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(userData)
+    })
+    const newUser = await response.json()
+    this.users.push(newUser)
+  }
+}
+```
+
+## Состояния действий
+
+Каждое действие может находиться в одном из следующих состояний:
+
+### 1. Ready (Готово)
+Действие готово к выполнению или уже завершено успешно.
+
+### 2. Pending (Выполняется)
+Действие в данный момент выполняется.
+
+### 3. Error (Ошибка)
+При выполнении действия произошла ошибка.
+
+### 4. Abort (Отменено)
+Действие было отменено.
+
+### 5. Lock (Заблокировано)
+Действие заблокировано и не может быть выполнено.
+
+## Проверка состояний
+
+```typescript
+export class UserModel extends ProtoModel {
+  @action async fetchUsers(): Promise<void> {
+    // Логика действия
+  }
+
+  // Проверка состояний
+  checkActionStates() {
+    const action = this.fetchUsers
+
+    if (action.isReady) {
+      console.log('Действие готово')
+    }
+
+    if (action.isPending) {
+      console.log('Действие выполняется')
+    }
+
+    if (action.isError) {
+      console.log('Ошибка:', action.error?.message)
+    }
+
+    if (action.isAbort) {
+      console.log('Действие отменено')
+    }
+
+    if (action.isLock) {
+      console.log('Действие заблокировано')
+    }
+  }
+}
+```
+
+## Выполнение действий
+
+### Базовое выполнение
+
+```typescript
+// В компоненте
+const userModel = inject(userModelProvider)!
+
+// Выполнение действия
+await userModel.fetchUsers.exec()
+```
+
+### С параметрами
+
+```typescript
+// Действие с параметрами
+@action async createUser(name: string, email: string): Promise<void> {
+  const response = await fetch('/api/users', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, email })
+  })
+  const newUser = await response.json()
+  this.users.push(newUser)
+}
+
+// Выполнение с параметрами
+await userModel.createUser.exec('John Doe', 'john@example.com')
+```
+
+### С AbortController
+
+```typescript
+@action async fetchUsers(abortController = new AbortController()): Promise<void> {
+  const response = await fetch('/api/users', {
+    signal: abortController.signal
+  })
+  this.users = await response.json()
+}
+
+// Выполнение с возможностью отмены
+const abortController = new AbortController()
+const promise = userModel.fetchUsers.exec(abortController)
+
+// Отмена действия
+abortController.abort()
+```
+
+## Управление жизненным циклом
+
+### Блокировка действий
+
+```typescript
+export class UserModel extends ProtoModel {
+  @action async fetchUsers(): Promise<void> {
+    // Логика загрузки
+  }
+
+  async performComplexOperation() {
+    // Блокируем действие
+    await this.fetchUsers.lock()
+    
+    try {
+      // Выполняем сложную операцию
+      await this.processData()
+    } finally {
+      // Разблокируем действие
+      this.fetchUsers.unlock()
+    }
+  }
+}
+```
+
+### Сброс ошибок
+
+```typescript
+export class UserModel extends ProtoModel {
+  @action async fetchUsers(): Promise<void> {
+    // Логика, которая может вызвать ошибку
+  }
+
+  async retryFetch() {
+    // Сбрасываем ошибку
+    this.fetchUsers.resetError()
+    
+    // Повторяем попытку
+    await this.fetchUsers.exec()
+  }
+}
+```
+
+### Отмена действий
+
+```typescript
+export class UserModel extends ProtoModel {
+  @action async fetchUsers(abortController = new AbortController()): Promise<void> {
+    const response = await fetch('/api/users', {
+      signal: abortController.signal
+    })
+    this.users = await response.json()
+  }
+
+  async cancelFetch() {
+    // Отменяем действие
+    await this.fetchUsers.abort('User cancelled')
+  }
+}
+```
+
+## Вложенные действия
+
+Действия могут вызывать другие действия:
+
+```typescript
+export class UserModel extends ProtoModel {
+  @action async fetchUsers(): Promise<void> {
+    const response = await fetch('/api/users')
+    this.users = await response.json()
+  }
+
+  @action async fetchUserDetails(userId: number): Promise<void> {
+    const response = await fetch(`/api/users/${userId}/details`)
+    const details = await response.json()
+    // Обработка деталей
+  }
+
+  @action async fetchAllUserData(): Promise<void> {
+    // Сначала загружаем список пользователей
+    await this.fetchUsers()
+    
+    // Затем загружаем детали для каждого пользователя
+    for (const user of this.users) {
+      await this.fetchUserDetails(user.id)
+    }
+  }
+}
+```
+
+## Обработка ошибок
+
+### Автоматическая обработка
+
+```typescript
+export class UserModel extends ProtoModel {
+  @action async fetchUsers(): Promise<void> {
+    try {
+      const response = await fetch('/api/users')
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      }
+      
+      this.users = await response.json()
+    } catch (error) {
+      // Ошибка автоматически сохраняется в action.error
+      console.error('Failed to fetch users:', error)
+      throw error // Перебрасываем ошибку для обработки в UI
+    }
+  }
+}
+```
+
+### Проверка ошибок в UI
+
+```vue
+<template>
+  <div>
+    <div v-if="userModel.fetchUsers.isError" class="error">
+      Ошибка загрузки: {{ userModel.fetchUsers.error?.message }}
+      <button @click="retryFetch">Повторить</button>
+    </div>
+    
+    <ul v-else>
+      <li v-for="user in userModel.users" :key="user.id">
+        {{ user.name }}
+      </li>
+    </ul>
+  </div>
+</template>
+
+<script setup lang="ts">
+const retryFetch = async () => {
+  userModel.fetchUsers.resetError()
+  await userModel.fetchUsers.exec()
+}
+</script>
+```
+
+## Типизация действий
+
+### С параметрами
+
+```typescript
+interface CreateUserData {
+  name: string
+  email: string
+  role?: string
+}
+
+export class UserModel extends ProtoModel {
+  @action async createUser(userData: CreateUserData): Promise<void> {
+    const response = await fetch('/api/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(userData)
+    })
+    const newUser = await response.json()
+    this.users.push(newUser)
+  }
+}
+
+// Использование с типизацией
+await userModel.createUser.exec({
+  name: 'John Doe',
+  email: 'john@example.com',
+  role: 'admin'
+})
+```
+
+### С возвращаемыми значениями
+
+```typescript
+export class UserModel extends ProtoModel {
+  @action async fetchUser(id: number): Promise<User> {
+    const response = await fetch(`/api/users/${id}`)
+    return await response.json()
+  }
+
+  @action async validateEmail(email: string): Promise<boolean> {
+    const response = await fetch('/api/validate-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    })
+    const result = await response.json()
+    return result.isValid
+  }
+}
+```
+
+## Условное выполнение
+
+```typescript
+export class UserModel extends ProtoModel {
+  @action async fetchUsers(): Promise<void> {
+    // Логика загрузки
+  }
+
+  async conditionalFetch() {
+    // Проверяем, не выполняется ли уже действие
+    if (this.fetchUsers.isPending) {
+      console.log('Загрузка уже выполняется')
+      return
+    }
+
+    // Проверяем, есть ли ошибка
+    if (this.fetchUsers.isError) {
+      console.log('Есть ошибка, сбрасываем')
+      this.fetchUsers.resetError()
+    }
+
+    // Выполняем действие
+    await this.fetchUsers.exec()
+  }
+}
+```
+
+## Мониторинг состояний
+
+```typescript
+export class UserModel extends ProtoModel {
+  @action async fetchUsers(): Promise<void> {
+    // Логика загрузки
+  }
+
+  get hasAnyPendingActions(): boolean {
+    return this.hasPendingActions
+  }
+
+  get hasAnyErrors(): boolean {
+    return this.hasActionWithError
+  }
+
+  get pendingActionsCount(): number {
+    // Подсчет выполняющихся действий
+    let count = 0
+    if (this.fetchUsers.isPending) count++
+    // Добавьте другие действия по необходимости
+    return count
+  }
+}
+```
+
+## Лучшие практики
+
+### 1. Именование действий
+
+```typescript
+export class UserModel extends ProtoModel {
+  // ✅ Хорошо - глаголы в инфинитиве
+  @action async fetchUsers(): Promise<void> { }
+  @action async createUser(): Promise<void> { }
+  @action async updateUser(): Promise<void> { }
+  @action async deleteUser(): Promise<void> { }
+
+  // ❌ Плохо - существительные или неясные названия
+  @action async users(): Promise<void> { }
+  @action async data(): Promise<void> { }
+  @action async process(): Promise<void> { }
+}
+```
+
+### 2. Обработка ошибок
+
+```typescript
+export class UserModel extends ProtoModel {
+  @action async fetchUsers(): Promise<void> {
+    try {
+      const response = await fetch('/api/users')
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      }
+      
+      this.users = await response.json()
+    } catch (error) {
+      // Логируем ошибку
+      console.error('Failed to fetch users:', error)
+      
+      // Можно добавить дополнительную логику
+      if (error instanceof TypeError) {
+        // Ошибка сети
+        throw new Error('Нет подключения к интернету')
+      }
+      
+      throw error
+    }
+  }
+}
+```
+
+### 3. Отмена операций
+
+```typescript
+export class UserModel extends ProtoModel {
+  @action async fetchUsers(abortController = new AbortController()): Promise<void> {
+    try {
+      const response = await fetch('/api/users', {
+        signal: abortController.signal
+      })
+      this.users = await response.json()
+    } catch (error) {
+      if (error.name === 'AbortError') {
+        console.log('Запрос отменен')
+        return
+      }
+      throw error
+    }
+  }
+}
+```
+
+### 4. Блокировка для предотвращения повторных вызовов
+
+```typescript
+export class UserModel extends ProtoModel {
+  @action async submitForm(formData: any): Promise<void> {
+    // Блокируем действие для предотвращения повторной отправки
+    if (this.submitForm.isLock) {
+      console.log('Форма уже отправляется')
+      return
+    }
+
+    await this.submitForm.lock()
+    
+    try {
+      const response = await fetch('/api/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      })
+      
+      if (!response.ok) {
+        throw new Error('Ошибка отправки формы')
+      }
+    } finally {
+      this.submitForm.unlock()
+    }
+  }
+}
+```
+
+## Следующие шаги
+
+Теперь, когда вы изучили действия, вы можете:
+
+1. [Изучить состояния подробнее](/guides/states/)
+2. [Познакомиться с декораторами](/guides/decorators/)
+3. [Изучить обработку ошибок](/guides/error-handling/)
+4. [Посмотреть примеры](/examples/) 

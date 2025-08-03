@@ -1,0 +1,530 @@
+---
+title: Action
+description: Справочник по классу Action в Vue Modeler
+---
+
+# Action
+
+Класс для управления асинхронными действиями в Vue Modeler. Предоставляет богатый API для управления жизненным циклом действий.
+
+## Синтаксис
+
+```typescript
+class Action<Args extends any[] = unknown[]> {
+  static readonly actionFlag: symbol
+  static readonly possibleState: {
+    pending: 'pending'
+    error: 'error'
+    lock: 'lock'
+    ready: 'ready'
+    abort: 'abort'
+  }
+  static abortedByLock: symbol
+
+  readonly name: string
+  state: ActionStateName
+  args: Args | never[]
+  promise: null | Promise<void>
+  error: null | ActionError
+  abortController: null | AbortController
+  abortReason: unknown
+
+  // Состояния
+  isPending: boolean
+  isError: boolean
+  isReady: boolean
+  isLock: boolean
+  isAbort: boolean
+
+  // Методы
+  exec(...args: Args): Promise<void>
+  abort(reason?: unknown): Promise<void>
+  lock(): Promise<void>
+  unlock(): this
+  resetError(): this
+  is(...args: ActionStateName[]): boolean
+  toString(): string
+}
+```
+
+## Свойства
+
+### name
+Имя действия.
+
+**Тип:** `string`
+
+**Описание:** Автоматически устанавливается на основе имени метода.
+
+### state
+Текущее состояние действия.
+
+**Тип:** `ActionStateName`
+
+**Возможные значения:**
+- `'pending'` - выполняется
+- `'ready'` - готово
+- `'error'` - ошибка
+- `'abort'` - отменено
+- `'lock'` - заблокировано
+
+### args
+Аргументы последнего вызова действия.
+
+**Тип:** `Args | never[]`
+
+**Описание:** Сохраняет аргументы, переданные в последний вызов `exec()`.
+
+### promise
+Промис текущего выполнения действия.
+
+**Тип:** `null | Promise<void>`
+
+**Описание:** `null`, если действие не выполняется, иначе промис выполнения.
+
+### error
+Ошибка действия (если есть).
+
+**Тип:** `null | ActionError`
+
+**Описание:** Содержит ошибку, если действие находится в состоянии `error`.
+
+### abortController
+Контроллер отмены действия.
+
+**Тип:** `null | AbortController`
+
+**Описание:** Доступен только когда действие находится в состоянии `pending`.
+
+### abortReason
+Причина отмены действия.
+
+**Тип:** `unknown`
+
+**Описание:** Содержит причину отмены, если действие находится в состоянии `abort`.
+
+## Состояния
+
+### isPending
+Проверяет, выполняется ли действие.
+
+**Тип:** `boolean`
+
+**Пример:**
+```typescript
+if (action.isPending) {
+  console.log('Действие выполняется')
+}
+```
+
+### isError
+Проверяет, есть ли ошибка у действия.
+
+**Тип:** `boolean`
+
+**Пример:**
+```typescript
+if (action.isError) {
+  console.log('Ошибка:', action.error?.message)
+}
+```
+
+### isReady
+Проверяет, готово ли действие к выполнению.
+
+**Тип:** `boolean`
+
+**Пример:**
+```typescript
+if (action.isReady) {
+  console.log('Действие готово к выполнению')
+}
+```
+
+### isLock
+Проверяет, заблокировано ли действие.
+
+**Тип:** `boolean`
+
+**Пример:**
+```typescript
+if (action.isLock) {
+  console.log('Действие заблокировано')
+}
+```
+
+### isAbort
+Проверяет, отменено ли действие.
+
+**Тип:** `boolean`
+
+**Пример:**
+```typescript
+if (action.isAbort) {
+  console.log('Действие отменено:', action.abortReason)
+}
+```
+
+## Методы
+
+### exec
+Выполняет действие.
+
+**Синтаксис:**
+```typescript
+exec(...args: Args): Promise<void>
+```
+
+**Параметры:**
+- `...args` - аргументы для выполнения действия
+
+**Возвращаемое значение:** `Promise<void>` - промис выполнения действия
+
+**Пример:**
+```typescript
+// Базовое выполнение
+await action.exec()
+
+// С параметрами
+await action.exec('param1', 'param2')
+
+// С AbortController
+const abortController = new AbortController()
+await action.exec(abortController)
+```
+
+### abort
+Отменяет действие.
+
+**Синтаксис:**
+```typescript
+abort(reason?: unknown): Promise<void>
+```
+
+**Параметры:**
+- `reason` (опционально) - причина отмены
+
+**Возвращаемое значение:** `Promise<void>` - промис завершения отмены
+
+**Пример:**
+```typescript
+// Отмена с причиной
+await action.abort('User cancelled')
+
+// Отмена без причины
+await action.abort()
+```
+
+### lock
+Блокирует действие.
+
+**Синтаксис:**
+```typescript
+lock(): Promise<void>
+```
+
+**Возвращаемое значение:** `Promise<void>` - промис завершения блокировки
+
+**Пример:**
+```typescript
+await action.lock()
+console.log('Действие заблокировано')
+```
+
+### unlock
+Разблокирует действие.
+
+**Синтаксис:**
+```typescript
+unlock(): this
+```
+
+**Возвращаемое значение:** `this` - текущий экземпляр действия
+
+**Пример:**
+```typescript
+action.unlock()
+console.log('Действие разблокировано')
+```
+
+### resetError
+Сбрасывает ошибку действия.
+
+**Синтаксис:**
+```typescript
+resetError(): this
+```
+
+**Возвращаемое значение:** `this` - текущий экземпляр действия
+
+**Пример:**
+```typescript
+if (action.isError) {
+  action.resetError()
+  await action.exec() // Повторная попытка
+}
+```
+
+### is
+Проверяет, находится ли действие в одном из указанных состояний.
+
+**Синтаксис:**
+```typescript
+is(...args: ActionStateName[]): boolean
+```
+
+**Параметры:**
+- `...args` - состояния для проверки
+
+**Возвращаемое значение:** `boolean` - `true`, если действие находится в одном из указанных состояний
+
+**Пример:**
+```typescript
+// Проверка одного состояния
+if (action.is('pending')) {
+  console.log('Действие выполняется')
+}
+
+// Проверка нескольких состояний
+if (action.is('pending', 'error')) {
+  console.log('Действие либо выполняется, либо в ошибке')
+}
+```
+
+### toString
+Возвращает строковое представление действия.
+
+**Синтаксис:**
+```typescript
+toString(): string
+```
+
+**Возвращаемое значение:** `string` - имя действия
+
+**Пример:**
+```typescript
+console.log(action.toString()) // "fetchUsers"
+```
+
+## Примеры
+
+### Базовое использование
+
+```typescript
+export class UserModel extends ProtoModel {
+  @action async fetchUsers(): Promise<void> {
+    const response = await fetch('/api/users')
+    this.users = await response.json()
+  }
+
+  async handleFetch() {
+    const action = this.fetchUsers
+    
+    if (action.isPending) {
+      console.log('Загрузка уже выполняется')
+      return
+    }
+
+    if (action.isError) {
+      action.resetError()
+    }
+
+    await action.exec()
+  }
+}
+```
+
+### Управление отменой
+
+```typescript
+export class UserModel extends ProtoModel {
+  @action async fetchUsers(abortController = new AbortController()): Promise<void> {
+    const response = await fetch('/api/users', {
+      signal: abortController.signal
+    })
+    this.users = await response.json()
+  }
+
+  async fetchWithTimeout(timeoutMs: number) {
+    const abortController = new AbortController()
+    const timeoutId = setTimeout(() => {
+      abortController.abort('Timeout')
+    }, timeoutMs)
+
+    try {
+      await this.fetchUsers.exec(abortController)
+    } catch (error) {
+      if (this.fetchUsers.isAbort) {
+        console.log('Запрос отменен:', this.fetchUsers.abortReason)
+      }
+    } finally {
+      clearTimeout(timeoutId)
+    }
+  }
+}
+```
+
+### Блокировка действий
+
+```typescript
+export class UserModel extends ProtoModel {
+  @action async submitForm(formData: any): Promise<void> {
+    const response = await fetch('/api/submit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(formData)
+    })
+    
+    if (!response.ok) {
+      throw new Error('Ошибка отправки формы')
+    }
+  }
+
+  async safeSubmit(formData: any) {
+    const action = this.submitForm
+    
+    if (action.isLock) {
+      console.log('Форма уже отправляется')
+      return
+    }
+
+    await action.lock()
+    
+    try {
+      await action.exec(formData)
+      console.log('Форма отправлена успешно')
+    } catch (error) {
+      console.error('Ошибка отправки:', error)
+    } finally {
+      action.unlock()
+    }
+  }
+}
+```
+
+### Мониторинг состояний
+
+```typescript
+export class UserModel extends ProtoModel {
+  @action async fetchUsers(): Promise<void> {
+    const response = await fetch('/api/users')
+    this.users = await response.json()
+  }
+
+  monitorAction() {
+    const action = this.fetchUsers
+    
+    // Отслеживаем изменения состояния
+    this.watch(() => action.state, (newState, oldState) => {
+      console.log(`Состояние изменилось: ${oldState} -> ${newState}`)
+      
+      switch (newState) {
+        case 'pending':
+          console.log('Началась загрузка')
+          break
+        case 'ready':
+          console.log('Загрузка завершена')
+          break
+        case 'error':
+          console.log('Ошибка загрузки:', action.error?.message)
+          break
+        case 'abort':
+          console.log('Загрузка отменена:', action.abortReason)
+          break
+      }
+    })
+  }
+}
+```
+
+### Обработка ошибок
+
+```typescript
+export class UserModel extends ProtoModel {
+  @action async fetchUsers(): Promise<void> {
+    try {
+      const response = await fetch('/api/users')
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      }
+      
+      this.users = await response.json()
+    } catch (error) {
+      console.error('Failed to fetch users:', error)
+      throw error
+    }
+  }
+
+  async retryWithBackoff(maxRetries = 3) {
+    let retries = 0
+    
+    while (retries < maxRetries) {
+      try {
+        await this.fetchUsers.exec()
+        return // Успешно
+      } catch (error) {
+        retries++
+        console.log(`Попытка ${retries} из ${maxRetries} не удалась`)
+        
+        if (retries >= maxRetries) {
+          throw error
+        }
+        
+        // Экспоненциальная задержка
+        await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, retries)))
+      }
+    }
+  }
+}
+```
+
+## Особенности
+
+### Автоматическое управление состояниями
+
+Action автоматически управляет состояниями:
+
+- `pending` - при вызове `exec()`
+- `ready` - при успешном завершении
+- `error` - при возникновении ошибки
+- `abort` - при отмене
+- `lock` - при вызове `lock()`
+
+### Интеграция с AbortController
+
+Action поддерживает стандартный `AbortController`:
+
+```typescript
+@action async fetchUsers(abortController = new AbortController()): Promise<void> {
+  const response = await fetch('/api/users', {
+    signal: abortController.signal
+  })
+  this.users = await response.json()
+}
+```
+
+### Реактивность
+
+Все свойства Action реактивны и автоматически обновляют UI:
+
+```vue
+<template>
+  <div>
+    <button :disabled="action.isPending">
+      {{ action.isPending ? 'Выполняется...' : 'Выполнить' }}
+    </button>
+    
+    <div v-if="action.isError" class="error">
+      {{ action.error?.message }}
+    </div>
+  </div>
+</template>
+```
+
+## Связанные темы
+
+- [ProtoModel](/reference/proto-model/)
+- [Декораторы](/guides/decorators/)
+- [Состояния](/guides/states/)
+- [Обработка ошибок](/guides/error-handling/) 

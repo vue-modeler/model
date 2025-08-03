@@ -1,0 +1,345 @@
+---
+title: Быстрый старт
+description: Пошаговое руководство по созданию первой модели с Vue Modeler
+---
+
+# Быстрый старт
+
+В этом руководстве мы создадим простое приложение для управления списком задач (Todo) с использованием Vue Modeler.
+
+## Шаг 1: Создание модели
+
+Создайте файл `TodoModel.ts`:
+
+```typescript
+import { ProtoModel } from 'vue-modeler'
+import { action } from 'vue-modeler/decorator'
+
+interface Todo {
+  id: number
+  title: string
+  completed: boolean
+}
+
+export class TodoModel extends ProtoModel {
+  todos: Todo[] = []
+  loading = false
+
+  @action async fetchTodos(): Promise<void> {
+    this.loading = true
+    try {
+      // Имитация API запроса
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      this.todos = [
+        { id: 1, title: 'Изучить Vue Modeler', completed: false },
+        { id: 2, title: 'Создать приложение', completed: true }
+      ]
+    } finally {
+      this.loading = false
+    }
+  }
+
+  @action async addTodo(title: string): Promise<void> {
+    const newTodo: Todo = {
+      id: Date.now(),
+      title,
+      completed: false
+    }
+    this.todos.push(newTodo)
+  }
+
+  @action async toggleTodo(id: number): Promise<void> {
+    const todo = this.todos.find(t => t.id === id)
+    if (todo) {
+      todo.completed = !todo.completed
+    }
+  }
+
+  @action async deleteTodo(id: number): Promise<void> {
+    this.todos = this.todos.filter(t => t.id !== id)
+  }
+}
+```
+
+## Шаг 2: Создание провайдера
+
+Создайте файл `todoProvider.ts`:
+
+```typescript
+import { model } from 'vue-modeler'
+import { TodoModel } from './TodoModel'
+
+export const todoModelProvider = model(() => new TodoModel())
+```
+
+## Шаг 3: Создание Vue компонента
+
+Создайте файл `TodoApp.vue`:
+
+```vue
+<template>
+  <div class="todo-app">
+    <h1>Список задач</h1>
+    
+    <!-- Форма добавления -->
+    <div class="add-todo">
+      <input 
+        v-model="newTodoTitle" 
+        @keyup.enter="addTodo"
+        placeholder="Добавить задачу..."
+        :disabled="todoModel.addTodo.isPending"
+      />
+      <button @click="addTodo" :disabled="!newTodoTitle.trim() || todoModel.addTodo.isPending">
+        Добавить
+      </button>
+    </div>
+
+    <!-- Индикатор загрузки -->
+    <div v-if="todoModel.fetchTodos.isPending" class="loading">
+      Загрузка задач...
+    </div>
+
+    <!-- Ошибка -->
+    <div v-if="todoModel.fetchTodos.isError" class="error">
+      Ошибка: {{ todoModel.fetchTodos.error?.message }}
+    </div>
+
+    <!-- Список задач -->
+    <ul v-if="todoModel.todos.length > 0" class="todo-list">
+      <li v-for="todo in todoModel.todos" :key="todo.id" class="todo-item">
+        <input 
+          type="checkbox" 
+          :checked="todo.completed"
+          @change="toggleTodo(todo.id)"
+          :disabled="todoModel.toggleTodo.isPending"
+        />
+        <span :class="{ completed: todo.completed }">{{ todo.title }}</span>
+        <button @click="deleteTodo(todo.id)" :disabled="todoModel.deleteTodo.isPending">
+          Удалить
+        </button>
+      </li>
+    </ul>
+
+    <!-- Пустое состояние -->
+    <div v-else-if="!todoModel.fetchTodos.isPending" class="empty">
+      Нет задач. Добавьте первую!
+    </div>
+
+    <!-- Кнопка обновления -->
+    <button @click="refreshTodos" :disabled="todoModel.fetchTodos.isPending">
+      Обновить
+    </button>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, inject, onMounted } from 'vue'
+import { todoModelProvider } from './todoProvider'
+
+const todoModel = inject(todoModelProvider)!
+const newTodoTitle = ref('')
+
+const addTodo = async () => {
+  if (newTodoTitle.value.trim()) {
+    await todoModel.addTodo.exec(newTodoTitle.value.trim())
+    newTodoTitle.value = ''
+  }
+}
+
+const toggleTodo = async (id: number) => {
+  await todoModel.toggleTodo.exec(id)
+}
+
+const deleteTodo = async (id: number) => {
+  await todoModel.deleteTodo.exec(id)
+}
+
+const refreshTodos = async () => {
+  await todoModel.fetchTodos.exec()
+}
+
+onMounted(() => {
+  refreshTodos()
+})
+</script>
+
+<style scoped>
+.todo-app {
+  max-width: 500px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.add-todo {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.add-todo input {
+  flex: 1;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.add-todo button {
+  padding: 8px 16px;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.add-todo button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.todo-list {
+  list-style: none;
+  padding: 0;
+}
+
+.todo-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border-bottom: 1px solid #eee;
+}
+
+.todo-item span {
+  flex: 1;
+}
+
+.todo-item span.completed {
+  text-decoration: line-through;
+  color: #888;
+}
+
+.todo-item button {
+  padding: 4px 8px;
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.loading, .error, .empty {
+  text-align: center;
+  padding: 20px;
+  color: #666;
+}
+
+.error {
+  color: #dc3545;
+}
+</style>
+```
+
+## Шаг 4: Интеграция в приложение
+
+Обновите ваш `main.ts`:
+
+```typescript
+import { createApp } from 'vue'
+import App from './App.vue'
+
+const app = createApp(App)
+app.mount('#app')
+```
+
+И создайте `App.vue`:
+
+```vue
+<template>
+  <div id="app">
+    <TodoApp />
+  </div>
+</template>
+
+<script setup lang="ts">
+import TodoApp from './TodoApp.vue'
+</script>
+```
+
+## Что мы создали
+
+Наше приложение демонстрирует основные возможности Vue Modeler:
+
+### 1. Реактивность
+- Изменения в `todos` автоматически обновляют UI
+- Состояния действий (`isPending`, `isError`) реактивны
+
+### 2. Асинхронные действия
+- `fetchTodos` - загрузка данных
+- `addTodo` - добавление новой задачи
+- `toggleTodo` - переключение состояния
+- `deleteTodo` - удаление задачи
+
+### 3. Управление состояниями
+- Каждое действие имеет состояния: `pending`, `ready`, `error`
+- UI реагирует на изменения состояний
+
+### 4. Обработка ошибок
+- Автоматическая обработка ошибок в действиях
+- Отображение ошибок в UI
+
+## Расширение функциональности
+
+### Добавление фильтрации
+
+```typescript
+export class TodoModel extends ProtoModel {
+  // ... существующий код ...
+  
+  filter = 'all' // 'all', 'active', 'completed'
+  
+  get filteredTodos(): Todo[] {
+    switch (this.filter) {
+      case 'active':
+        return this.todos.filter(t => !t.completed)
+      case 'completed':
+        return this.todos.filter(t => t.completed)
+      default:
+        return this.todos
+    }
+  }
+  
+  setFilter(filter: 'all' | 'active' | 'completed'): void {
+    this.filter = filter
+  }
+}
+```
+
+### Добавление счетчиков
+
+```typescript
+export class TodoModel extends ProtoModel {
+  // ... существующий код ...
+  
+  get totalTodos(): number {
+    return this.todos.length
+  }
+  
+  get completedTodos(): number {
+    return this.todos.filter(t => t.completed).length
+  }
+  
+  get activeTodos(): number {
+    return this.todos.filter(t => !t.completed).length
+  }
+}
+```
+
+## Следующие шаги
+
+Теперь, когда вы создали базовое приложение, вы можете:
+
+1. [Изучить модели подробнее](/guides/models/)
+2. [Познакомиться с действиями](/guides/actions/)
+3. [Изучить состояния](/guides/states/)
+4. [Посмотреть другие примеры](/examples/) 

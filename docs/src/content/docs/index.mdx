@@ -1,0 +1,102 @@
+---
+title: Vue Modeler
+description: Мощная библиотека для управления состоянием в Vue.js приложениях с поддержкой действий, состояний и реактивности
+template: splash
+hero:
+  tagline: Управление состоянием Vue.js приложений стало проще
+  image:
+    file: ../../assets/houston.webp
+  actions:
+    - text: Быстрый старт
+      link: /getting-started/
+      icon: right-arrow
+    - text: GitHub
+      link: https://github.com/your-username/vue-modeler
+      icon: external
+      variant: minimal
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+## Что такое Vue Modeler?
+
+Vue Modeler - это современная библиотека для управления состоянием в Vue.js приложениях. Она предоставляет элегантный способ создания реактивных моделей с поддержкой асинхронных действий, состояний и обработки ошибок.
+
+## Основные возможности
+
+<CardGrid stagger>
+	<Card title="Реактивные модели" icon="database">
+		Создавайте реактивные модели с автоматическим отслеживанием изменений и обновлением UI
+	</Card>
+	<Card title="Асинхронные действия" icon="play">
+		Управляйте асинхронными операциями с поддержкой состояний (pending, ready, error, abort)
+	</Card>
+	<Card title="Декораторы" icon="code">
+		Используйте декораторы для простого объявления действий и автоматического управления их жизненным циклом
+	</Card>
+	<Card title="Обработка ошибок" icon="warning">
+		Встроенная система обработки ошибок с детальной информацией о состоянии действий
+	</Card>
+	<Card title="Отмена операций" icon="stop">
+		Поддержка AbortController для отмены длительных операций
+	</Card>
+	<Card title="Блокировка действий" icon="lock">
+		Возможность блокировки действий для предотвращения повторных вызовов
+	</Card>
+</CardGrid>
+
+## Быстрый пример
+
+```typescript
+import { ProtoModel } from 'vue-modeler'
+import { action } from 'vue-modeler/decorator'
+
+class UserModel extends ProtoModel {
+  users = []
+  loading = false
+
+  @action async fetchUsers(): Promise<void> {
+    this.loading = true
+    try {
+      const response = await fetch('/api/users')
+      this.users = await response.json()
+    } finally {
+      this.loading = false
+    }
+  }
+
+  @action async createUser(userData: any): Promise<void> {
+    const response = await fetch('/api/users', {
+      method: 'POST',
+      body: JSON.stringify(userData)
+    })
+    const newUser = await response.json()
+    this.users.push(newUser)
+  }
+}
+```
+
+## Почему Vue Modeler?
+
+- **Простота**: Минимальный API для быстрого старта
+- **Типизация**: Полная поддержка TypeScript
+- **Производительность**: Оптимизированная реактивность с Vue 3
+- **Гибкость**: Легкая интеграция с существующими проектами
+- **Надежность**: Обширное покрытие тестами
+
+## Следующие шаги
+
+<CardGrid stagger>
+	<Card title="Установка" icon="download">
+		Узнайте, как установить и настроить Vue Modeler в вашем проекте
+	</Card>
+	<Card title="Модели" icon="database">
+		Изучите основы создания и использования моделей
+	</Card>
+	<Card title="Действия" icon="play">
+		Познакомьтесь с системой действий и их состояниями
+	</Card>
+	<Card title="Примеры" icon="code">
+		Изучите практические примеры использования библиотеки
+	</Card>
+</CardGrid>

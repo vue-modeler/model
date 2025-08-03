@@ -1,0 +1,362 @@
+---
+title: ProtoModel
+description: Справочник по базовому классу ProtoModel в Vue Modeler
+---
+
+# ProtoModel
+
+Базовый класс для всех моделей в Vue Modeler. Предоставляет реактивность, управление жизненным циклом и систему действий.
+
+## Синтаксис
+
+```typescript
+abstract class ProtoModel {
+  // Защищенные свойства
+  protected _effectScope: EffectScope
+  protected _actions: WeakMap<OriginalMethodWrapper, ShallowReactive<ActionPublic>>
+  protected _actionIds: WeakMap<ShallowReactive<ActionPublic>, number>
+  protected _actionStates: Map<ActionStateName, Ref<number>>
+  protected _actionsSize: number
+  protected _unwatchers: Set<WatchStopHandle>
+
+  // Публичные геттеры
+  get hasPendingActions(): boolean
+  get hasActionWithError(): boolean
+
+  // Защищенные методы
+  protected watch(...args: unknown[]): WatchStopHandle
+  protected computed<T>(getter: ComputedGetter<T>, debugOptions?: DebuggerOptions): ComputedRef<T>
+  protected updateBit(number: number, bitPosition: number, bitValue: boolean): number
+  protected createAction(actionFunction: OriginalMethodWrapper): ShallowReactive<ActionPublic>
+  protected getActionStatesRef(stateName: ActionStateName): Ref<number>
+  protected action(originalMethod: OriginalMethod | OriginalMethodWrapper): ShallowReactive<ActionPublic>
+  protected setActionState(action: Action): void
+
+  // Публичные методы
+  isModelOf(typeModel: ModelConstructor): boolean
+  destructor(): void
+}
+```
+
+## Свойства
+
+### hasPendingActions
+Проверяет, есть ли выполняющиеся действия.
+
+**Тип:** `boolean`
+
+**Описание:** Возвращает `true`, если хотя бы одно действие находится в состоянии `pending`.
+
+### hasActionWithError
+Проверяет, есть ли действия с ошибками.
+
+**Тип:** `boolean`
+
+**Описание:** Возвращает `true`, если хотя бы одно действие находится в состоянии `error`.
+
+## Методы
+
+### watch
+Создает наблюдатель с автоматическим управлением жизненным циклом.
+
+**Синтаксис:**
+```typescript
+protected watch(...args: unknown[]): WatchStopHandle
+```
+
+**Параметры:**
+- `...args` - аргументы для функции `watch` из Vue 3
+
+**Возвращаемое значение:** `WatchStopHandle` - функция для остановки наблюдателя
+
+**Пример:**
+```typescript
+export class UserModel extends ProtoModel {
+  users = []
+
+  constructor() {
+    super()
+    
+    // Отслеживаем изменения пользователей
+    this.watch(() => this.users, (newUsers, oldUsers) => {
+      console.log('Пользователи изменились:', newUsers.length)
+    })
+  }
+}
+```
+
+### computed
+Создает вычисляемое свойство с автоматическим управлением жизненным циклом.
+
+**Синтаксис:**
+```typescript
+protected computed<T>(getter: ComputedGetter<T>, debugOptions?: DebuggerOptions): ComputedRef<T>
+```
+
+**Параметры:**
+- `getter` - функция для вычисления значения
+- `debugOptions` (опционально) - опции для отладки
+
+**Возвращаемое значение:** `ComputedRef<T>` - реактивное вычисляемое свойство
+
+**Пример:**
+```typescript
+export class UserModel extends ProtoModel {
+  users = []
+
+  get activeUsers() {
+    return this.computed(() => 
+      this.users.filter(user => user.active)
+    )
+  }
+}
+```
+
+### action
+Получает или создает экземпляр действия для метода.
+
+**Синтаксис:**
+```typescript
+protected action(originalMethod: OriginalMethod | OriginalMethodWrapper): ShallowReactive<ActionPublic>
+```
+
+**Параметры:**
+- `originalMethod` - оригинальный метод или его обертка
+
+**Возвращаемое значение:** `ShallowReactive<ActionPublic>` - экземпляр действия
+
+**Пример:**
+```typescript
+export class UserModel extends ProtoModel {
+  @action async fetchUsers(): Promise<void> {
+    // Логика действия
+  }
+
+  async someMethod() {
+    // Получаем экземпляр действия
+    const action = this.action(this.fetchUsers)
+    
+    if (action.isPending) {
+      console.log('Загрузка уже выполняется')
+    }
+  }
+}
+```
+
+### setActionState
+Устанавливает состояние действия.
+
+**Синтаксис:**
+```typescript
+protected setActionState(action: Action): void
+```
+
+**Параметры:**
+- `action` - экземпляр действия
+
+**Описание:** Внутренний метод для управления состояниями действий. Обычно не вызывается напрямую.
+
+### isModelOf
+Проверяет, является ли модель экземпляром указанного типа.
+
+**Синтаксис:**
+```typescript
+isModelOf(typeModel: ModelConstructor): boolean
+```
+
+**Параметры:**
+- `typeModel` - конструктор модели для проверки
+
+**Возвращаемое значение:** `boolean` - `true`, если модель является экземпляром указанного типа
+
+**Пример:**
+```typescript
+export class UserModel extends ProtoModel {
+  // Логика модели
+}
+
+const userModel = new UserModel()
+console.log(userModel.isModelOf(UserModel)) // true
+```
+
+### destructor
+Очищает ресурсы модели.
+
+**Синтаксис:**
+```typescript
+destructor(): void
+```
+
+**Описание:** Автоматически вызывается при уничтожении модели. Останавливает все наблюдатели и эффекты.
+
+**Пример:**
+```typescript
+export class UserModel extends ProtoModel {
+  private interval: number
+
+  constructor() {
+    super()
+    this.interval = setInterval(() => {
+      this.updateData()
+    }, 5000)
+  }
+
+  destructor() {
+    // Очищаем интервал
+    clearInterval(this.interval)
+    
+    // Вызываем деструктор базового класса
+    super.destructor()
+  }
+}
+```
+
+## Примеры
+
+### Базовая модель
+
+```typescript
+import { ProtoModel } from 'vue-modeler'
+import { action } from 'vue-modeler/decorator'
+
+export class UserModel extends ProtoModel {
+  users = []
+  loading = false
+
+  @action async fetchUsers(): Promise<void> {
+    this.loading = true
+    try {
+      const response = await fetch('/api/users')
+      this.users = await response.json()
+    } finally {
+      this.loading = false
+    }
+  }
+
+  get totalUsers(): number {
+    return this.users.length
+  }
+}
+```
+
+### Модель с наблюдателями
+
+```typescript
+export class UserModel extends ProtoModel {
+  users = []
+  selectedUser = null
+
+  constructor() {
+    super()
+    
+    // Отслеживаем изменения выбранного пользователя
+    this.watch(() => this.selectedUser, (newUser, oldUser) => {
+      if (newUser) {
+        console.log('Выбран пользователь:', newUser.name)
+      }
+    })
+  }
+
+  @action async selectUser(user: any): Promise<void> {
+    this.selectedUser = user
+  }
+}
+```
+
+### Модель с вычисляемыми свойствами
+
+```typescript
+export class UserModel extends ProtoModel {
+  users = []
+  filter = 'all'
+
+  get filteredUsers() {
+    return this.computed(() => {
+      if (this.filter === 'all') {
+        return this.users
+      }
+      return this.users.filter(user => user.role === this.filter)
+    })
+  }
+
+  get activeUsersCount() {
+    return this.computed(() => 
+      this.users.filter(user => user.active).length
+    )
+  }
+}
+```
+
+### Модель с жизненным циклом
+
+```typescript
+export class UserModel extends ProtoModel {
+  private websocket: WebSocket | null = null
+  private reconnectTimer: number | null = null
+
+  constructor() {
+    super()
+    this.setupWebSocket()
+  }
+
+  private setupWebSocket() {
+    this.websocket = new WebSocket('ws://localhost:8080')
+    this.websocket.onmessage = (event) => {
+      this.handleMessage(JSON.parse(event.data))
+    }
+  }
+
+  destructor() {
+    if (this.websocket) {
+      this.websocket.close()
+      this.websocket = null
+    }
+    
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer)
+      this.reconnectTimer = null
+    }
+    
+    super.destructor()
+  }
+}
+```
+
+## Особенности
+
+### Автоматическое управление ресурсами
+
+ProtoModel автоматически управляет жизненным циклом:
+
+- Создает `EffectScope` для изоляции эффектов
+- Автоматически останавливает наблюдатели при уничтожении
+- Очищает все ресурсы в `destructor()`
+
+### Реактивность
+
+Все свойства модели автоматически становятся реактивными:
+
+```typescript
+export class UserModel extends ProtoModel {
+  count = 0 // Автоматически реактивное
+  
+  increment() {
+    this.count++ // Автоматически обновляет UI
+  }
+}
+```
+
+### Система действий
+
+ProtoModel предоставляет встроенную систему для управления действиями:
+
+- Автоматическое создание экземпляров `Action`
+- Управление состояниями действий
+- Отслеживание выполняющихся действий
+
+## Связанные темы
+
+- [Action](/reference/action/)
+- [Декораторы](/guides/decorators/)
+- [Жизненный цикл](/guides/lifecycle/)
+- [Модели](/guides/models/) 

@@ -1,0 +1,200 @@
+---
+title: Установка
+description: Инструкции по установке и настройке Vue Modeler
+---
+
+# Установка Vue Modeler
+
+## Требования
+
+Vue Modeler требует:
+
+- **Node.js** версии 16 или выше
+- **Vue.js** версии 3.0 или выше
+- **TypeScript** (рекомендуется)
+
+## Установка
+
+### NPM
+
+```bash
+npm install vue-modeler
+```
+
+### Yarn
+
+```bash
+yarn add vue-modeler
+```
+
+### PNPM
+
+```bash
+pnpm add vue-modeler
+```
+
+## Настройка TypeScript
+
+Если вы используете TypeScript, убедитесь, что в вашем `tsconfig.json` включены следующие опции:
+
+```json
+{
+  "compilerOptions": {
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "target": "ES2020",
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
+  }
+}
+```
+
+## Настройка Vite
+
+Если вы используете Vite, добавьте следующую конфигурацию в `vite.config.ts`:
+
+```typescript
+import { defineConfig } from 'vite'
+import vue from '@vitejs/plugin-vue'
+
+export default defineConfig({
+  plugins: [vue()],
+  optimizeDeps: {
+    include: ['vue-modeler']
+  }
+})
+```
+
+## Настройка Webpack
+
+Для Webpack добавьте в конфигурацию:
+
+```javascript
+module.exports = {
+  // ... другие настройки
+  resolve: {
+    alias: {
+      'vue-modeler': 'vue-modeler/dist/index.js'
+    }
+  }
+}
+```
+
+## Проверка установки
+
+Создайте простой тест для проверки установки:
+
+```typescript
+import { ProtoModel } from 'vue-modeler'
+import { action } from 'vue-modeler/decorator'
+
+class TestModel extends ProtoModel {
+  @action async testAction(): Promise<void> {
+    console.log('Vue Modeler работает!')
+  }
+}
+
+const model = new TestModel()
+console.log('Модель создана:', model)
+```
+
+## Интеграция с Vue приложением
+
+### Основная настройка
+
+```typescript
+// main.ts
+import { createApp } from 'vue'
+import App from './App.vue'
+
+const app = createApp(App)
+app.mount('#app')
+```
+
+### Использование в компонентах
+
+```vue
+<template>
+  <div>
+    <button @click="userModel.fetchUsers.exec()">
+      Загрузить пользователей
+    </button>
+    <div v-if="userModel.fetchUsers.isPending">
+      Загрузка...
+    </div>
+    <div v-if="userModel.fetchUsers.isError">
+      Ошибка: {{ userModel.fetchUsers.error?.message }}
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { inject } from 'vue'
+import { model } from 'vue-modeler'
+import { UserModel } from './UserModel'
+
+// Создание провайдера модели
+const userModelProvider = model(() => new UserModel())
+
+// Использование в компоненте
+const userModel = inject(userModelProvider)
+</script>
+```
+
+## Настройка с Dependency Injection
+
+Vue Modeler поддерживает интеграцию с системами dependency injection:
+
+```typescript
+import { Provider } from '@vue-modeler/dc'
+import { model } from 'vue-modeler'
+import { UserModel } from './UserModel'
+
+// Создание провайдера
+const userModelProvider: Provider<UserModel> = model(() => new UserModel())
+
+// Регистрация в DI контейнере
+container.register(userModelProvider)
+```
+
+## Настройка ESLint
+
+Если вы используете ESLint, добавьте следующие правила в `.eslintrc.js`:
+
+```javascript
+module.exports = {
+  // ... другие настройки
+  rules: {
+    '@typescript-eslint/no-explicit-any': 'warn',
+    '@typescript-eslint/explicit-function-return-type': 'off',
+    '@typescript-eslint/explicit-module-boundary-types': 'off'
+  }
+}
+```
+
+## Настройка Prettier
+
+Для форматирования кода с декораторами добавьте в `.prettierrc`:
+
+```json
+{
+  "semi": true,
+  "trailingComma": "es5",
+  "singleQuote": true,
+  "printWidth": 80,
+  "tabWidth": 2
+}
+```
+
+## Следующие шаги
+
+После установки вы можете:
+
+1. [Изучить быстрый старт](/getting-started/)
+2. [Создать первую модель](/guides/models/)
+3. [Познакомиться с действиями](/guides/actions/)
+4. [Изучить примеры](/examples/simple/) 

@@ -1,0 +1,427 @@
+---
+title: Модели
+description: Подробное руководство по созданию и использованию моделей в Vue Modeler
+---
+
+# Модели
+
+Модели - это основа Vue Modeler. Они представляют собой реактивные классы, которые управляют состоянием вашего приложения.
+
+## Создание модели
+
+Все модели должны наследоваться от базового класса `ProtoModel`:
+
+```typescript
+import { ProtoModel } from 'vue-modeler'
+
+export class UserModel extends ProtoModel {
+  // Свойства модели
+  users = []
+  loading = false
+  error = null
+
+  // Методы модели
+  addUser(user) {
+    this.users.push(user)
+  }
+
+  removeUser(id) {
+    this.users = this.users.filter(user => user.id !== id)
+  }
+}
+```
+
+## Реактивные свойства
+
+Vue Modeler автоматически делает все свойства модели реактивными:
+
+```typescript
+export class CounterModel extends ProtoModel {
+  count = 0
+  name = 'Counter'
+  items = []
+
+  increment() {
+    this.count++ // Автоматически обновляет UI
+  }
+
+  addItem(item) {
+    this.items.push(item) // Автоматически обновляет UI
+  }
+}
+```
+
+## Вычисляемые свойства
+
+Используйте геттеры для создания вычисляемых свойств:
+
+```typescript
+export class TodoModel extends ProtoModel {
+  todos = []
+
+  get totalTodos() {
+    return this.todos.length
+  }
+
+  get completedTodos() {
+    return this.todos.filter(todo => todo.completed)
+  }
+
+  get activeTodos() {
+    return this.todos.filter(todo => !todo.completed)
+  }
+
+  get completionPercentage() {
+    if (this.totalTodos === 0) return 0
+    return Math.round((this.completedTodos.length / this.totalTodos) * 100)
+  }
+}
+```
+
+## Методы модели
+
+### Обычные методы
+
+Обычные методы выполняют синхронные операции:
+
+```typescript
+export class UserModel extends ProtoModel {
+  users = []
+
+  addUser(user) {
+    this.users.push(user)
+  }
+
+  removeUser(id) {
+    this.users = this.users.filter(user => user.id !== id)
+  }
+
+  updateUser(id, updates) {
+    const user = this.users.find(u => u.id === id)
+    if (user) {
+      Object.assign(user, updates)
+    }
+  }
+
+  findUser(id) {
+    return this.users.find(user => user.id === id)
+  }
+}
+```
+
+### Асинхронные методы
+
+Для асинхронных операций используйте декоратор `@action`:
+
+```typescript
+import { action } from 'vue-modeler/decorator'
+
+export class UserModel extends ProtoModel {
+  users = []
+  loading = false
+
+  @action async fetchUsers() {
+    this.loading = true
+    try {
+      const response = await fetch('/api/users')
+      this.users = await response.json()
+    } catch (error) {
+      console.error('Failed to fetch users:', error)
+    } finally {
+      this.loading = false
+    }
+  }
+
+  @action async createUser(userData) {
+    const response = await fetch('/api/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(userData)
+    })
+    const newUser = await response.json()
+    this.users.push(newUser)
+  }
+}
+```
+
+## Жизненный цикл модели
+
+### Конструктор
+
+```typescript
+export class UserModel extends ProtoModel {
+  constructor(private apiService: ApiService) {
+    super()
+    // Инициализация модели
+  }
+}
+```
+
+### Деструктор
+
+Модель автоматически очищает ресурсы при уничтожении:
+
+```typescript
+export class UserModel extends ProtoModel {
+  private interval: number
+
+  constructor() {
+    super()
+    // Создание интервала
+    this.interval = setInterval(() => {
+      this.updateData()
+    }, 5000)
+  }
+
+  // Автоматически вызывается при уничтожении модели
+  destructor() {
+    // Очистка интервала
+    clearInterval(this.interval)
+    super.destructor()
+  }
+}
+```
+
+## Наследование моделей
+
+Вы можете создавать иерархию моделей:
+
+```typescript
+// Базовый класс
+export abstract class BaseModel extends ProtoModel {
+  loading = false
+  error = null
+
+  protected async handleRequest<T>(request: Promise<T>): Promise<T> {
+    this.loading = true
+    this.error = null
+    try {
+      return await request
+    } catch (error) {
+      this.error = error
+      throw error
+    } finally {
+      this.loading = false
+    }
+  }
+}
+
+// Специализированная модель
+export class UserModel extends BaseModel {
+  users = []
+
+  @action async fetchUsers() {
+    const users = await this.handleRequest(
+      fetch('/api/users').then(res => res.json())
+    )
+    this.users = users
+  }
+}
+```
+
+## Создание провайдера
+
+Для использования модели в приложении создайте провайдер:
+
+```typescript
+import { model } from 'vue-modeler'
+import { UserModel } from './UserModel'
+
+export const userModelProvider = model(() => new UserModel())
+```
+
+## Использование в компонентах
+
+```vue
+<template>
+  <div>
+    <div v-if="userModel.loading">Загрузка...</div>
+    <div v-else-if="userModel.error">Ошибка: {{ userModel.error.message }}</div>
+    <ul v-else>
+      <li v-for="user in userModel.users" :key="user.id">
+        {{ user.name }}
+      </li>
+    </ul>
+    <button @click="userModel.fetchUsers.exec()">Обновить</button>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { inject } from 'vue'
+import { userModelProvider } from './userProvider'
+
+const userModel = inject(userModelProvider)!
+</script>
+```
+
+## Типизация моделей
+
+### Интерфейсы
+
+```typescript
+interface User {
+  id: number
+  name: string
+  email: string
+  createdAt: Date
+}
+
+interface UserFilters {
+  search?: string
+  role?: string
+  active?: boolean
+}
+
+export class UserModel extends ProtoModel {
+  users: User[] = []
+  filters: UserFilters = {}
+  selectedUser: User | null = null
+
+  @action async fetchUsers(filters?: UserFilters) {
+    // Типизированная логика
+  }
+
+  @action async createUser(userData: Omit<User, 'id' | 'createdAt'>) {
+    // Типизированная логика
+  }
+}
+```
+
+### Дженерики
+
+```typescript
+interface BaseEntity {
+  id: number
+  createdAt: Date
+  updatedAt: Date
+}
+
+export class BaseModel<T extends BaseEntity> extends ProtoModel {
+  items: T[] = []
+  loading = false
+
+  @action async fetchItems(): Promise<T[]> {
+    // Общая логика для всех сущностей
+  }
+
+  @action async createItem(item: Omit<T, 'id' | 'createdAt' | 'updatedAt'>) {
+    // Общая логика создания
+  }
+}
+
+export class UserModel extends BaseModel<User> {
+  // Специфичная для пользователей логика
+}
+```
+
+## Лучшие практики
+
+### 1. Разделение ответственности
+
+```typescript
+// ❌ Плохо - слишком много ответственности
+export class AppModel extends ProtoModel {
+  users = []
+  posts = []
+  comments = []
+  settings = {}
+  // ... много всего
+}
+
+// ✅ Хорошо - разделение на специализированные модели
+export class UserModel extends ProtoModel {
+  users = []
+  // Только логика пользователей
+}
+
+export class PostModel extends ProtoModel {
+  posts = []
+  // Только логика постов
+}
+```
+
+### 2. Иммутабельность
+
+```typescript
+export class TodoModel extends ProtoModel {
+  todos = []
+
+  // ❌ Плохо - мутация объекта
+  updateTodo(id: number, updates: Partial<Todo>) {
+    const todo = this.todos.find(t => t.id === id)
+    if (todo) {
+      Object.assign(todo, updates) // Мутация
+    }
+  }
+
+  // ✅ Хорошо - создание нового объекта
+  updateTodo(id: number, updates: Partial<Todo>) {
+    this.todos = this.todos.map(todo =>
+      todo.id === id ? { ...todo, ...updates } : todo
+    )
+  }
+}
+```
+
+### 3. Нормализация данных
+
+```typescript
+export class UserModel extends ProtoModel {
+  users = {}
+  userIds = []
+
+  @action async fetchUsers() {
+    const users = await api.getUsers()
+    
+    // Нормализация данных
+    this.users = users.reduce((acc, user) => {
+      acc[user.id] = user
+      return acc
+    }, {})
+    
+    this.userIds = users.map(user => user.id)
+  }
+
+  getUser(id: number) {
+    return this.users[id]
+  }
+
+  get usersList() {
+    return this.userIds.map(id => this.users[id])
+  }
+}
+```
+
+### 4. Обработка ошибок
+
+```typescript
+export class UserModel extends ProtoModel {
+  users = []
+  error = null
+
+  @action async fetchUsers() {
+    try {
+      this.error = null
+      const response = await fetch('/api/users')
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      }
+      
+      this.users = await response.json()
+    } catch (error) {
+      this.error = error
+      console.error('Failed to fetch users:', error)
+    }
+  }
+}
+```
+
+## Следующие шаги
+
+Теперь, когда вы изучили основы моделей, вы можете:
+
+1. [Изучить действия](/guides/actions/)
+2. [Познакомиться с состояниями](/guides/states/)
+3. [Изучить декораторы](/guides/decorators/)
+4. [Посмотреть примеры](/examples/) 

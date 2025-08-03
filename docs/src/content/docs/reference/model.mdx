@@ -1,0 +1,131 @@
+---
+title: model
+description: Справочник по функции model в Vue Modeler
+---
+
+# model
+
+Создает провайдер для модели с автоматическим проксированием.
+
+## Синтаксис
+
+```typescript
+function model<T>(
+  originFactory: () => T,
+  options?: ProviderOptions
+): T extends ProtoModel ? Provider<Model<T>> : Provider<T>
+```
+
+## Параметры
+
+### originFactory
+Функция, которая создает экземпляр модели.
+
+**Тип:** `() => T`
+
+**Описание:** Фабричная функция, возвращающая экземпляр модели. Если возвращаемый объект является экземпляром `ProtoModel`, он будет автоматически обернут в прокси для обеспечения реактивности.
+
+### options (опционально)
+Опции для провайдера.
+
+**Тип:** `ProviderOptions`
+
+**Описание:** Дополнительные опции для настройки поведения провайдера.
+
+## Возвращаемое значение
+
+Провайдер для модели. Если модель наследуется от `ProtoModel`, возвращается `Provider<Model<T>>`, иначе `Provider<T>`.
+
+## Примеры
+
+### Базовое использование
+
+```typescript
+import { model } from 'vue-modeler'
+import { UserModel } from './UserModel'
+
+// Создание провайдера для модели
+const userModelProvider = model(() => new UserModel())
+```
+
+### С опциями
+
+```typescript
+import { model } from 'vue-modeler'
+import { UserModel } from './UserModel'
+
+const userModelProvider = model(() => new UserModel(), {
+  // Опции провайдера
+})
+```
+
+### Использование в компоненте
+
+```vue
+<template>
+  <div>
+    <button @click="userModel.fetchUsers.exec()">
+      Загрузить пользователей
+    </button>
+    <div v-if="userModel.fetchUsers.isPending">
+      Загрузка...
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { inject } from 'vue'
+import { userModelProvider } from './userProvider'
+
+const userModel = inject(userModelProvider)!
+</script>
+```
+
+## Особенности
+
+### Автоматическое проксирование
+
+Если модель наследуется от `ProtoModel`, функция `model` автоматически создает прокси, который:
+
+- Оборачивает действия в объекты `Action`
+- Обеспечивает реактивность свойств
+- Управляет жизненным циклом действий
+
+### Типизация
+
+Функция `model` обеспечивает полную типизацию:
+
+```typescript
+// Модель наследуется от ProtoModel
+class UserModel extends ProtoModel {
+  @action async fetchUsers(): Promise<void> { }
+}
+
+const provider = model(() => new UserModel())
+// Тип: Provider<Model<UserModel>>
+
+// Обычная модель
+class RegularModel {
+  data = []
+}
+
+const provider = model(() => new RegularModel())
+// Тип: Provider<RegularModel>
+```
+
+### Интеграция с DI
+
+Функция `model` создает провайдер, совместимый с системами dependency injection:
+
+```typescript
+import { Provider } from '@vue-modeler/dc'
+
+const userModelProvider: Provider<Model<UserModel>> = model(() => new UserModel())
+```
+
+## Связанные темы
+
+- [ProtoModel](/reference/proto-model/)
+- [Action](/reference/action/)
+- [Декораторы](/guides/decorators/)
+- [Модели](/guides/models/) 

@@ -1,0 +1,422 @@
+---
+title: Простой пример
+description: Простой пример использования Vue Modeler для управления счетчиком
+---
+
+# Простой пример
+
+В этом примере мы создадим простое приложение-счетчик, демонстрирующее основные возможности Vue Modeler.
+
+## Модель счетчика
+
+```typescript
+// CounterModel.ts
+import { ProtoModel } from 'vue-modeler'
+import { action } from 'vue-modeler/decorator'
+
+export class CounterModel extends ProtoModel {
+  count = 0
+  history: number[] = []
+
+  @action async increment(): Promise<void> {
+    this.count++
+    this.history.push(this.count)
+  }
+
+  @action async decrement(): Promise<void> {
+    this.count--
+    this.history.push(this.count)
+  }
+
+  @action async reset(): Promise<void> {
+    this.count = 0
+    this.history.push(this.count)
+  }
+
+  @action async setValue(value: number): Promise<void> {
+    this.count = value
+    this.history.push(this.count)
+  }
+
+  get isPositive(): boolean {
+    return this.count > 0
+  }
+
+  get isNegative(): boolean {
+    return this.count < 0
+  }
+
+  get isZero(): boolean {
+    return this.count === 0
+  }
+}
+```
+
+## Провайдер модели
+
+```typescript
+// counterProvider.ts
+import { model } from 'vue-modeler'
+import { CounterModel } from './CounterModel'
+
+export const counterModelProvider = model(() => new CounterModel())
+```
+
+## Vue компонент
+
+```vue
+<!-- CounterApp.vue -->
+<template>
+  <div class="counter-app">
+    <h1>Счетчик</h1>
+    
+    <div class="counter-display">
+      <span class="count">{{ counterModel.count }}</span>
+    </div>
+
+    <div class="counter-controls">
+      <button 
+        @click="decrement"
+        :disabled="counterModel.decrement.isPending"
+      >
+        <span v-if="counterModel.decrement.isPending">...</span>
+        <span v-else>-</span>
+      </button>
+
+      <button 
+        @click="reset"
+        :disabled="counterModel.reset.isPending"
+      >
+        <span v-if="counterModel.reset.isPending">...</span>
+        <span v-else>Сброс</span>
+      </button>
+
+      <button 
+        @click="increment"
+        :disabled="counterModel.increment.isPending"
+      >
+        <span v-if="counterModel.increment.isPending">...</span>
+        <span v-else>+</span>
+      </button>
+    </div>
+
+    <div class="counter-status">
+      <div v-if="counterModel.isPositive" class="positive">
+        Положительное число
+      </div>
+      <div v-else-if="counterModel.isNegative" class="negative">
+        Отрицательное число
+      </div>
+      <div v-else class="zero">
+        Ноль
+      </div>
+    </div>
+
+    <div class="history">
+      <h3>История изменений</h3>
+      <ul>
+        <li v-for="(value, index) in counterModel.history" :key="index">
+          {{ value }}
+        </li>
+      </ul>
+    </div>
+
+    <div class="action-status">
+      <h3>Статус действий</h3>
+      <div class="status-item">
+        <span>Increment:</span>
+        <span :class="getStatusClass(counterModel.increment)">
+          {{ getStatusText(counterModel.increment) }}
+        </span>
+      </div>
+      <div class="status-item">
+        <span>Decrement:</span>
+        <span :class="getStatusClass(counterModel.decrement)">
+          {{ getStatusText(counterModel.decrement) }}
+        </span>
+      </div>
+      <div class="status-item">
+        <span>Reset:</span>
+        <span :class="getStatusClass(counterModel.reset)">
+          {{ getStatusText(counterModel.reset) }}
+        </span>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { inject } from 'vue'
+import { counterModelProvider } from './counterProvider'
+
+const counterModel = inject(counterModelProvider)!
+
+const increment = async () => {
+  await counterModel.increment.exec()
+}
+
+const decrement = async () => {
+  await counterModel.decrement.exec()
+}
+
+const reset = async () => {
+  await counterModel.reset.exec()
+}
+
+const getStatusClass = (action: any) => {
+  if (action.isPending) return 'pending'
+  if (action.isError) return 'error'
+  if (action.isAbort) return 'abort'
+  if (action.isLock) return 'lock'
+  return 'ready'
+}
+
+const getStatusText = (action: any) => {
+  if (action.isPending) return 'Выполняется'
+  if (action.isError) return 'Ошибка'
+  if (action.isAbort) return 'Отменено'
+  if (action.isLock) return 'Заблокировано'
+  return 'Готово'
+}
+</script>
+
+<style scoped>
+.counter-app {
+  max-width: 400px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: Arial, sans-serif;
+}
+
+.counter-display {
+  text-align: center;
+  margin: 20px 0;
+}
+
+.count {
+  font-size: 48px;
+  font-weight: bold;
+  color: #333;
+}
+
+.counter-controls {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin: 20px 0;
+}
+
+.counter-controls button {
+  padding: 10px 20px;
+  font-size: 18px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  background: #007bff;
+  color: white;
+}
+
+.counter-controls button:hover:not(:disabled) {
+  background: #0056b3;
+}
+
+.counter-controls button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.counter-status {
+  text-align: center;
+  margin: 20px 0;
+  padding: 10px;
+  border-radius: 4px;
+}
+
+.positive {
+  background: #d4edda;
+  color: #155724;
+}
+
+.negative {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.zero {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.history {
+  margin: 20px 0;
+}
+
+.history ul {
+  list-style: none;
+  padding: 0;
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.history li {
+  padding: 5px 10px;
+  border-bottom: 1px solid #eee;
+}
+
+.history li:last-child {
+  border-bottom: none;
+}
+
+.action-status {
+  margin: 20px 0;
+}
+
+.status-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 5px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.pending {
+  color: #856404;
+}
+
+.error {
+  color: #721c24;
+}
+
+.abort {
+  color: #721c24;
+}
+
+.lock {
+  color: #856404;
+}
+
+.ready {
+  color: #155724;
+}
+</style>
+```
+
+## Интеграция в приложение
+
+```typescript
+// main.ts
+import { createApp } from 'vue'
+import App from './App.vue'
+
+const app = createApp(App)
+app.mount('#app')
+```
+
+```vue
+<!-- App.vue -->
+<template>
+  <div id="app">
+    <CounterApp />
+  </div>
+</template>
+
+<script setup lang="ts">
+import CounterApp from './CounterApp.vue'
+</script>
+```
+
+## Что демонстрирует этот пример
+
+### 1. Реактивность
+- Изменения в `count` автоматически обновляют UI
+- Вычисляемые свойства (`isPositive`, `isNegative`, `isZero`) реактивны
+
+### 2. Действия
+- `increment`, `decrement`, `reset` - асинхронные действия
+- Каждое действие имеет состояния (pending, ready, error)
+
+### 3. Состояния действий
+- UI показывает текущее состояние каждого действия
+- Кнопки блокируются во время выполнения действий
+
+### 4. История изменений
+- Модель сохраняет историю изменений
+- История автоматически обновляется при изменениях
+
+### 5. Вычисляемые свойства
+- `isPositive`, `isNegative`, `isZero` - реактивные геттеры
+- UI реагирует на изменения этих свойств
+
+## Расширение примера
+
+### Добавление асинхронности
+
+```typescript
+export class CounterModel extends ProtoModel {
+  count = 0
+  history: number[] = []
+
+  @action async increment(): Promise<void> {
+    // Имитация асинхронной операции
+    await new Promise(resolve => setTimeout(resolve, 500))
+    this.count++
+    this.history.push(this.count)
+  }
+
+  @action async decrement(): Promise<void> {
+    await new Promise(resolve => setTimeout(resolve, 500))
+    this.count--
+    this.history.push(this.count)
+  }
+}
+```
+
+### Добавление валидации
+
+```typescript
+export class CounterModel extends ProtoModel {
+  count = 0
+  history: number[] = []
+
+  @action async setValue(value: number): Promise<void> {
+    if (value < -100 || value > 100) {
+      throw new Error('Значение должно быть от -100 до 100')
+    }
+    this.count = value
+    this.history.push(this.count)
+  }
+}
+```
+
+### Добавление отмены операций
+
+```typescript
+export class CounterModel extends ProtoModel {
+  count = 0
+  history: number[] = []
+
+  @action async longOperation(abortController = new AbortController()): Promise<void> {
+    await new Promise((resolve, reject) => {
+      const timeout = setTimeout(resolve, 3000)
+      
+      abortController.signal.addEventListener('abort', () => {
+        clearTimeout(timeout)
+        reject(new DOMException('', 'AbortError'))
+      })
+    })
+    
+    this.count += 10
+    this.history.push(this.count)
+  }
+}
+```
+
+## Следующие шаги
+
+Теперь, когда вы изучили простой пример, вы можете:
+
+1. [Изучить CRUD операции](/examples/crud/)
+2. [Познакомиться с асинхронными операциями](/examples/async/)
+3. [Изучить вложенные действия](/examples/nested/)
+4. [Вернуться к руководствам](/guides/) 

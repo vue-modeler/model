@@ -1,0 +1,581 @@
+---
+title: Отмена операций
+description: Подробное руководство по отмене операций в Vue Modeler
+---
+
+# Отмена операций
+
+Vue Modeler поддерживает отмену операций с помощью стандартного `AbortController` API, что позволяет пользователям отменять длительные операции.
+
+## Основы отмены операций
+
+### Использование AbortController
+
+```typescript
+export class UserModel extends ProtoModel {
+  @action async fetchUsers(abortController = new AbortController()): Promise<void> {
+    const response = await fetch('/api/users', {
+      signal: abortController.signal
+    })
+    this.users = await response.json()
+  }
+}
+
+// Использование в компоненте
+const abortController = new AbortController()
+const promise = userModel.fetchUsers.exec(abortController)
+
+// Отмена операции
+abortController.abort()
+```
+
+### Проверка состояния отмены
+
+```typescript
+export class UserModel extends ProtoModel {
+  @action async fetchUsers(abortController = new AbortController()): Promise<void> {
+    try {
+      const response = await fetch('/api/users', {
+        signal: abortController.signal
+      })
+      this.users = await response.json()
+    } catch (error) {
+      if (error.name === 'AbortError') {
+        console.log('Запрос отменен')
+        return
+      }
+      throw error
+    }
+  }
+
+  checkAbortState() {
+    if (this.fetchUsers.isAbort) {
+      console.log('Действие отменено')
+      console.log('Причина отмены:', this.fetchUsers.abortReason)
+    }
+  }
+}
+```
+
+## Отмена с таймаутом
+
+### Простой таймаут
+
+```typescript
+export class UserModel extends ProtoModel {
+  @action async fetchUsers(abortController = new AbortController()): Promise<void> {
+    const response = await fetch('/api/users', {
+      signal: abortController.signal
+    })
+    this.users = await response.json()
+  }
+
+  async fetchWithTimeout(timeoutMs: number) {
+    const abortController = new AbortController()
+    const timeoutId = setTimeout(() => {
+      abortController.abort('Timeout')
+    }, timeoutMs)
+
+    try {
+      await this.fetchUsers.exec(abortController)
+    } catch (error) {
+      if (this.fetchUsers.isAbort) {
+        console.log('Запрос отменен по таймауту')
+      }
+    } finally {
+      clearTimeout(timeoutId)
+    }
+  }
+}
+```
+
+### Настраиваемый таймаут
+
+```typescript
+export class UserModel extends ProtoModel {
+  @action async fetchUsers(abortController = new AbortController()): Promise<void> {
+    const response = await fetch('/api/users', {
+      signal: abortController.signal
+    })
+    this.users = await response.json()
+  }
+
+  async fetchWithConfigurableTimeout(timeoutMs: number, retryCount = 0) {
+    const abortController = new AbortController()
+    const timeoutId = setTimeout(() => {
+      abortController.abort(`Timeout after ${timeoutMs}ms`)
+    }, timeoutMs)
+
+    try {
+      await this.fetchUsers.exec(abortController)
+    } catch (error) {
+      if (this.fetchUsers.isAbort && retryCount < 3) {
+        console.log(`Попытка ${retryCount + 1} из 3`)
+        return this.fetchWithConfigurableTimeout(timeoutMs * 2, retryCount + 1)
+      }
+      throw error
+    } finally {
+      clearTimeout(timeoutId)
+    }
+  }
+}
+```
+
+## Отмена вложенных операций
+
+### Передача AbortController
+
+```typescript
+export class UserModel extends ProtoModel {
+  @action async fetchUsers(abortController = new AbortController()): Promise<void> {
+    const response = await fetch('/api/users', {
+      signal: abortController.signal
+    })
+    this.users = await response.json()
+  }
+
+  @action async fetchUserDetails(userId: number, abortController = new AbortController()): Promise<void> {
+    const response = await fetch(`/api/users/${userId}/details`, {
+      signal: abortController.signal
+    })
+    const details = await response.json()
+    // Обработка деталей
+  }
+
+  @action async fetchAllUserData(abortController = new AbortController()): Promise<void> {
+    // Передаем тот же AbortController всем вложенным операциям
+    await this.fetchUsers(abortController)
+    
+    for (const user of this.users) {
+      await this.fetchUserDetails(user.id, abortController)
+    }
+  }
+}
+```
+
+### Отдельные AbortController для каждой операции
+
+```typescript
+export class UserModel extends ProtoModel {
+  @action async fetchUsers(abortController = new AbortController()): Promise<void> {
+    const response = await fetch('/api/users', {
+      signal: abortController.signal
+    })
+    this.users = await response.json()
+  }
+
+  @action async fetchUserDetails(userId: number, abortController = new AbortController()): Promise<void> {
+    const response = await fetch(`/api/users/${userId}/details`, {
+      signal: abortController.signal
+    })
+    const details = await response.json()
+  }
+
+  @action async fetchAllUserData(): Promise<void> {
+    // Каждая операция имеет свой AbortController
+    await this.fetchUsers()
+    
+    for (const user of this.users) {
+      // Создаем новый AbortController для каждой детали
+      const detailsAbortController = new AbortController()
+      await this.fetchUserDetails(user.id, detailsAbortController)
+    }
+  }
+}
+```
+
+## Отмена с пользовательским интерфейсом
+
+### Кнопка отмены
+
+```vue
+<template>
+  <div>
+    <div v-if="userModel.fetchUsers.isPending" class="loading">
+      <span>Загрузка пользователей...</span>
+      <button @click="cancelFetch" class="cancel-btn">
+        Отменить
+      </button>
+    </div>
+
+    <div v-else-if="userModel.fetchUsers.isAbort" class="aborted">
+      <span>Загрузка отменена</span>
+      <button @click="retryFetch">Повторить</button>
+    </div>
+
+    <div v-else-if="userModel.fetchUsers.isError" class="error">
+      <span>Ошибка: {{ userModel.fetchUsers.error?.message }}</span>
+      <button @click="retryFetch">Повторить</button>
+    </div>
+
+    <ul v-else>
+      <li v-for="user in userModel.users" :key="user.id">
+        {{ user.name }}
+      </li>
+    </ul>
+
+    <button 
+      @click="startFetch"
+      :disabled="userModel.fetchUsers.isPending"
+    >
+      Загрузить пользователей
+    </button>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref } from 'vue'
+
+const currentAbortController = ref<AbortController | null>(null)
+
+const startFetch = async () => {
+  currentAbortController.value = new AbortController()
+  try {
+    await userModel.fetchUsers.exec(currentAbortController.value)
+  } catch (error) {
+    if (userModel.fetchUsers.isAbort) {
+      console.log('Загрузка отменена пользователем')
+    }
+  }
+}
+
+const cancelFetch = () => {
+  if (currentAbortController.value) {
+    currentAbortController.value.abort('User cancelled')
+    currentAbortController.value = null
+  }
+}
+
+const retryFetch = async () => {
+  userModel.fetchUsers.resetError()
+  await startFetch()
+}
+</script>
+
+<style scoped>
+.loading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  background: #f0f8ff;
+  border-radius: 4px;
+}
+
+.cancel-btn {
+  padding: 4px 8px;
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.aborted {
+  padding: 10px;
+  background: #fff3cd;
+  border-radius: 4px;
+  color: #856404;
+}
+
+.error {
+  padding: 10px;
+  background: #f8d7da;
+  border-radius: 4px;
+  color: #721c24;
+}
+</style>
+```
+
+### Автоматическая отмена при навигации
+
+```vue
+<template>
+  <div>
+    <div v-if="userModel.fetchUsers.isPending">
+      Загрузка...
+    </div>
+    <ul v-else>
+      <li v-for="user in userModel.users" :key="user.id">
+        {{ user.name }}
+      </li>
+    </ul>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { onMounted, onUnmounted } from 'vue'
+
+let abortController: AbortController | null = null
+
+onMounted(async () => {
+  abortController = new AbortController()
+  try {
+    await userModel.fetchUsers.exec(abortController)
+  } catch (error) {
+    if (userModel.fetchUsers.isAbort) {
+      console.log('Загрузка отменена при размонтировании компонента')
+    }
+  }
+})
+
+onUnmounted(() => {
+  if (abortController) {
+    abortController.abort('Component unmounted')
+  }
+})
+</script>
+```
+
+## Отмена с причинами
+
+### Пользовательские причины отмены
+
+```typescript
+export class UserModel extends ProtoModel {
+  @action async fetchUsers(abortController = new AbortController()): Promise<void> {
+    const response = await fetch('/api/users', {
+      signal: abortController.signal
+    })
+    this.users = await response.json()
+  }
+
+  async cancelWithReason(reason: string) {
+    const abortController = new AbortController()
+    const promise = this.fetchUsers.exec(abortController)
+    
+    // Отменяем с причиной
+    abortController.abort(reason)
+    
+    try {
+      await promise
+    } catch (error) {
+      if (this.fetchUsers.isAbort) {
+        console.log('Причина отмены:', this.fetchUsers.abortReason)
+      }
+    }
+  }
+}
+```
+
+### Обработка разных причин отмены
+
+```typescript
+export class UserModel extends ProtoModel {
+  @action async fetchUsers(abortController = new AbortController()): Promise<void> {
+    try {
+      const response = await fetch('/api/users', {
+        signal: abortController.signal
+      })
+      this.users = await response.json()
+    } catch (error) {
+      if (error.name === 'AbortError') {
+        const reason = abortController.signal.reason
+        this.handleAbort(reason)
+        return
+      }
+      throw error
+    }
+  }
+
+  private handleAbort(reason: any): void {
+    switch (reason) {
+      case 'Timeout':
+        console.log('Запрос отменен по таймауту')
+        break
+      case 'User cancelled':
+        console.log('Запрос отменен пользователем')
+        break
+      case 'Component unmounted':
+        console.log('Запрос отменен при размонтировании компонента')
+        break
+      default:
+        console.log('Запрос отменен:', reason)
+    }
+  }
+}
+```
+
+## Отмена с восстановлением
+
+### Сохранение состояния при отмене
+
+```typescript
+export class UserModel extends ProtoModel {
+  users = []
+  partialData = []
+
+  @action async fetchUsers(abortController = new AbortController()): Promise<void> {
+    try {
+      const response = await fetch('/api/users', {
+        signal: abortController.signal
+      })
+      
+      // Обрабатываем данные по частям
+      const reader = response.body?.getReader()
+      if (!reader) return
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        // Обрабатываем часть данных
+        const chunk = new TextDecoder().decode(value)
+        const users = JSON.parse(chunk)
+        this.partialData.push(...users)
+      }
+
+      this.users = this.partialData
+    } catch (error) {
+      if (error.name === 'AbortError') {
+        console.log('Загрузка отменена, но частичные данные сохранены')
+        // Сохраняем частичные данные
+        this.users = this.partialData
+        return
+      }
+      throw error
+    }
+  }
+}
+```
+
+### Возобновление загрузки
+
+```typescript
+export class UserModel extends ProtoModel {
+  users = []
+  lastLoadedIndex = 0
+
+  @action async fetchUsers(abortController = new AbortController()): Promise<void> {
+    try {
+      const response = await fetch(`/api/users?offset=${this.lastLoadedIndex}`, {
+        signal: abortController.signal
+      })
+      const newUsers = await response.json()
+      
+      this.users.push(...newUsers)
+      this.lastLoadedIndex += newUsers.length
+    } catch (error) {
+      if (error.name === 'AbortError') {
+        console.log('Загрузка отменена, можно возобновить с позиции', this.lastLoadedIndex)
+        return
+      }
+      throw error
+    }
+  }
+
+  async resumeFetch() {
+    // Возобновляем загрузку с последней позиции
+    await this.fetchUsers.exec()
+  }
+}
+```
+
+## Лучшие практики
+
+### 1. Всегда используйте AbortController для сетевых запросов
+
+```typescript
+export class UserModel extends ProtoModel {
+  // ✅ Хорошо - с AbortController
+  @action async fetchUsers(abortController = new AbortController()): Promise<void> {
+    const response = await fetch('/api/users', {
+      signal: abortController.signal
+    })
+    this.users = await response.json()
+  }
+
+  // ❌ Плохо - без AbortController
+  @action async fetchUsers(): Promise<void> {
+    const response = await fetch('/api/users')
+    this.users = await response.json()
+  }
+}
+```
+
+### 2. Правильная обработка отмены
+
+```typescript
+export class UserModel extends ProtoModel {
+  @action async fetchUsers(abortController = new AbortController()): Promise<void> {
+    try {
+      const response = await fetch('/api/users', {
+        signal: abortController.signal
+      })
+      this.users = await response.json()
+    } catch (error) {
+      if (error.name === 'AbortError') {
+        console.log('Запрос отменен')
+        return // Не перебрасываем ошибку отмены
+      }
+      throw error // Перебрасываем другие ошибки
+    }
+  }
+}
+```
+
+### 3. Очистка ресурсов
+
+```typescript
+export class UserModel extends ProtoModel {
+  private timeoutIds: number[] = []
+
+  @action async fetchUsers(abortController = new AbortController()): Promise<void> {
+    const timeoutId = setTimeout(() => {
+      abortController.abort('Timeout')
+    }, 5000)
+    
+    this.timeoutIds.push(timeoutId)
+
+    try {
+      const response = await fetch('/api/users', {
+        signal: abortController.signal
+      })
+      this.users = await response.json()
+    } finally {
+      // Очищаем таймаут
+      clearTimeout(timeoutId)
+      this.timeoutIds = this.timeoutIds.filter(id => id !== timeoutId)
+    }
+  }
+
+  destructor() {
+    // Очищаем все таймауты при уничтожении модели
+    this.timeoutIds.forEach(clearTimeout)
+    super.destructor()
+  }
+}
+```
+
+### 4. Информативные причины отмены
+
+```typescript
+export class UserModel extends ProtoModel {
+  @action async fetchUsers(abortController = new AbortController()): Promise<void> {
+    const response = await fetch('/api/users', {
+      signal: abortController.signal
+    })
+    this.users = await response.json()
+  }
+
+  async cancelWithInformativeReason() {
+    const abortController = new AbortController()
+    const promise = this.fetchUsers.exec(abortController)
+    
+    // ✅ Хорошо - информативная причина
+    abortController.abort('User clicked cancel button')
+    
+    // ❌ Плохо - неинформативная причина
+    abortController.abort()
+  }
+}
+```
+
+## Следующие шаги
+
+Теперь, когда вы изучили отмену операций, вы можете:
+
+1. [Изучить блокировку действий](/guides/locking/)
+2. [Познакомиться с жизненным циклом](/guides/lifecycle/)
+3. [Изучить обработку ошибок](/guides/error-handling/)
+4. [Посмотреть примеры](/examples/) 
