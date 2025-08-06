@@ -2,7 +2,7 @@
 
 ## What is @vue-modeler/model
 
-A state management library based on models for [VUE.js.](VUE.js.) The extremely simple API serves single purpose — creating models. It preserves types, supports OOP, DRY, and SOLID principles.
+A state management library based on models for [Vue.js](https://vuejs.org/). The extremely simple API serves single purpose — creating models. It preserves types, supports OOP, DRY, and SOLID principles.
 
 ---
 
@@ -34,7 +34,7 @@ A state management library based on models for [VUE.js.](VUE.js.) The extremely 
 Less code, fewer issues.
 
 #### **Use Classes and Interfaces**
-Both VUEX and Pinia employ custom approaches for managing stores and reusing common code. I wanted to use standard classes, interfaces, getters, and protected properties. That's why my models are built upon classes and support OOP patterns.
+Both Vuex and Pinia employ custom approaches for managing stores and reusing common code. I wanted to use standard classes, interfaces, getters, and protected properties. That's why my models are built upon classes and support OOP patterns.
 
 #### **Reuse Business Logic Across Projects**
 Models are classes where dependencies are injected via constructors, so model files don't contain direct imports of external dependencies. Models can easily be extracted into separate modules and reused in other projects or with different UI libraries.
@@ -51,4 +51,192 @@ Models are classes where dependencies are injected via constructors, so model fi
 
 ---
 
-This library promises to simplify state management in [Vue.js](Vue.js) applications while promoting clean, scalable, and maintainable code.
+This library promises to simplify state management in [Vue.js](https://vuejs.org/) applications while promoting clean, scalable, and maintainable code.
+
+## Installation
+
+First, [install @vue-modeler/dc](https://github.com/vue-modeler/dc?tab=readme-ov-file#installation)
+
+Then install @vue-modeler/model:
+
+```bash
+npm add @vue-modeler/model
+```
+
+## Usage Examples
+
+### 1. Define Proto model
+
+```typescript
+import { ProtoModel, action } from '@vue-modeler/model'
+
+export interface Api {
+   fetchUser: () => Promise<UserDto>
+   patch: (dto: PatchDto) => Promise<void> 
+}
+
+export interface UserDto {
+   name: string
+   email: string
+}
+
+export interface PatchDto {
+   name?: string
+   email?: string
+}
+
+// Define your model class extending ProtoModel
+class User extends ProtoModel {
+  
+  // Regular properties. It will be reactive after creation model 
+  protected _name = ''
+  protected _email = ''
+  
+  get name(): string {
+   return this._name
+  }
+
+  get email(): string {
+   return this._email
+  }
+
+  constructor(
+     private api: Api
+  ) {
+     super()
+
+     this.action(this.init).exec()
+  }   
+  
+  // Actions (async methods with @action decorator)
+  @action async init() {
+    if (this.action(this.patch).isPending) {
+      throw new Error('action execution conflict')
+    } 
+
+    const userDto = await this.api.fetchUser()
+    this._name = userDto.name
+    this._email = userDto.email
+  }
+   
+  @action async patch(dto: PatchDto): Promise<void> {
+     if (this.action(this.init).isPending) {
+       throw new Error('action execution conflict')
+     }
+
+     await this.api.patch(dto)
+     if (dto.name) this._name = dto.name
+     if (dto.email) this._email = dto.email
+  }
+}
+```
+
+### 2. Create API
+
+```typescript
+export const fetchUser = async (): Promise<UserDto> => {
+  const response = await fetch('/api/users/me')
+  return response.json()
+}
+
+export const patchUser = async (dto: PatchDto): Promise<void> => {
+  await fetch('/api/users/me', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(dto)
+  })
+}
+```
+
+### 3. Compose all together and create model provider  
+
+```typescript 
+import { model } from '@vue-modeler/model'
+
+export const useUser = model(() => new User({
+   fetchUser, 
+   patch: patchUser
+}))
+```
+
+### 4. Using Models in Vue Components
+
+```html
+<template>
+  <div>
+    <div v-if="user.init.isPending">Loading...</div>
+    <div v-else-if="user.init.error">Error: {{ user.init.error.message }}</div>
+    <div v-else>
+      <h2>{{ user.name }}</h2>
+      <p>{{ user.email }}</p>
+      
+      <form @submit.prevent="saveUser" class="user-form">
+        <div class="form-group">
+          <label for="name">Name:</label>
+          <input 
+            id="name"
+            v-model="formData.name" 
+            type="text" 
+            :disabled="user.init.isPending || user.patch.isPending"
+            required
+          />
+        </div>
+        
+        <div class="form-group">
+          <label for="email">Email:</label>
+          <input 
+            id="email"
+            v-model="formData.email" 
+            type="email" 
+            :disabled="user.init.isPending || user.patch.isPending"
+            required
+          />
+        </div>
+        
+        <div class="form-actions">
+          <button type="button" 
+            :disabled="user.init.isPending || user.patch.isPending"
+            @click="user.init.exec()"
+          >
+            Reload User
+          </button>
+          
+          <button type="submit" :disabled="user.init.isPending || user.patch.isPending">
+            {{ user.patch.isPending ? 'Saving...' : 'Save Changes' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, watch } from 'vue'
+import { useUser } from './user-model'
+
+const user = useUser()
+
+// Form data for editing
+const formData = ref({
+  name: user.name,
+  email: user.email
+})
+
+// Update form data when user data changes
+watch(() => user.name, (newName) => {
+  formData.value.name = newName
+})
+
+watch(() => user.email, (newEmail) => {
+  formData.value.email = newEmail
+})
+
+const saveUser = () => {
+  user.patch.exec({
+    name: formData.value.name,
+    email: formData.value.email
+  })
+}
+</script>
+```
+

@@ -1,7 +1,7 @@
 {
   "type": "module",
   "name": "@vue-modeler/model",
-  "version": "1.0.6",
+  "version": "1.0.7-beta.1",
   "description": "A state management library based on models for Vue.js",
   "author": "abratko",
   "license": "MIT",
@@ -40,8 +40,8 @@
     "vitest": "^2.1.9"
   },
   "peerDependencies": {
-    "@vue-modeler/dc": "^2.1.0",
-    "vue": "^2.7"
+    "@vue-modeler/dc": ">=2.1.0 <3.0.0-beta.999",
+    "vue": ">=2.7 <4.0.0"
   },
   "scripts": {
     "build": "tsc && vite build",
