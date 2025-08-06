@@ -1,7 +1,7 @@
 {
   "type": "module",
   "name": "@vue-modeler/model",
-  "version": "1.0.6",
+  "version": "1.0.7-beta.1",
   "description": "A state management library based on models for Vue.js",
   "author": "abratko",
   "license": "MIT",
@@ -67,4 +67,3 @@
   ],
   "homepage": "https://github.com/vue-modeler/model#readme"
 }
-
