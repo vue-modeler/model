@@ -7,8 +7,9 @@ export const action: MethodDecorator = (
   actionName: string | symbol,
   descriptor: PropertyDescriptor,
 ): void => {
-  if (typeof actionName !== 'string') {
-    throw new Error('Action name is not a string')
+  const actionType = typeof actionName
+  if (actionType !== 'string' && actionType !== 'symbol') {
+    throw new Error('Action name is not a string or symbol')
   }
 
   if (typeof descriptor.value !== 'function') {
@@ -33,13 +34,13 @@ export const action: MethodDecorator = (
       // This code will be executed only for internal calls (this.actionName()). 
       // For external calls (model.actionName()) will be executed Proxy handler. @see createModel
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-      return this.action(stubObj[actionName]).exec(...args)
+      return this.action(stubObj[actionName.toString()]).exec(...args)
     } as OriginalMethodWrapper
   } 
 
   // save original method. It will be used inside Action.exec
   // @see Action.exec
-  stubObj[actionName][Action.actionFlag] = originalMethod
+  stubObj[actionName.toString()][Action.actionFlag] = originalMethod
 
-  descriptor.value = stubObj[actionName]
+  descriptor.value = stubObj[actionName.toString()]
 }
