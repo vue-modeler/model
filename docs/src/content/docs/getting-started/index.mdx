@@ -3,9 +3,27 @@ title: Быстрый старт
 description: Пошаговое руководство по созданию первой модели с Vue Modeler
 ---
 
-# Быстрый старт
+В этом руководстве мы создадим простое приложение для управления списком задач (Todo) на основе Nuxt
+с использованием **@vue-modeler/model**.
 
-В этом руководстве мы создадим простое приложение для управления списком задач (Todo) с использованием Vue Modeler.
+## Подготовка
+
+Первым делом нужно подготовить проект. 
+1. [Создаем проект с помощью Nuxt](https://nuxt.com/docs/getting-started/installation).
+2. Устанавливаем **@vue-modeler/dc** и **@vue-modeler/model**
+3. Создаем плагин для Nuxt в папке `plugins`
+
+```typescript
+// plugins/vue-modeler-dc.ts
+import { vueModelerDc } from '@vue-modeler/dc'
+
+export default defineNuxtPlugin((nuxtApp) => {
+  nuxtApp.vueApp.use(vueModelerDc)
+})
+```
+4. Запускаем проект.
+
+Теперь мы можем создавать модели.
 
 ## Шаг 1: Создание модели
 

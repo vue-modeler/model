@@ -19,9 +19,9 @@ export default defineConfig({
 				{
 					label: 'Введение',
 					items: [
-						{ label: 'Что такое Vue Modeler', link: '/introduction/' },
-						{ label: 'Быстрый старт', link: '/getting-started/' },
+						{ label: 'Что такое model', link: '/introduction/' },
 						{ label: 'Установка', link: '/installation/' },
+						{ label: 'Быстрый старт', link: '/getting-started/' },
 					],
 				},
 				{
