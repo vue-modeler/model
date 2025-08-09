@@ -1,3 +1,10 @@
+## [1.0.7-beta.2](https://github.com/vue-modeler/model/compare/v1.0.7-beta.1...v1.0.7-beta.2) (2025-08-09)
+
+
+### Bug Fixes
+
+* enhance action decorator to accept both string and symbol types ([da62a24](https://github.com/vue-modeler/model/commit/da62a24041886cd5bc43916a3643b3eaf8a296e8))
+
 ## [1.0.7-beta.1](https://github.com/vue-modeler/model/compare/v1.0.6...v1.0.7-beta.1) (2025-08-03)
 
 
