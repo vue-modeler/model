@@ -9,7 +9,7 @@ importers:
   .:
     dependencies:
       '@vue-modeler/dc':
-        specifier: '>=2.1.0 <3.0.0-beta.999'
+        specifier: ~2.1.0 || ~3.0.0
         version: 2.1.0(vue@2.7.16)
       vue:
         specifier: '>=2.7 <4.0.0'
