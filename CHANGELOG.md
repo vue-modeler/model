@@ -1,3 +1,11 @@
+## [1.0.7-beta.3](https://github.com/vue-modeler/model/compare/v1.0.7-beta.2...v1.0.7-beta.3) (2025-08-12)
+
+
+### Bug Fixes
+
+* update .gitignore and adjust peer dependency version in package.json ([63f68df](https://github.com/vue-modeler/model/commit/63f68df6117ebfb6e2fb9dd7554de607ad4c3dff))
+* update pnpm-lock.yaml for dependency version specification ([fc52be8](https://github.com/vue-modeler/model/commit/fc52be86c31dbc333ae6ae27ab6ed98fa23c4056))
+
 ## [1.0.7-beta.2](https://github.com/vue-modeler/model/compare/v1.0.7-beta.1...v1.0.7-beta.2) (2025-08-09)
 
 
