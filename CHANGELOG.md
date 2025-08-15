@@ -1,3 +1,10 @@
+## [1.0.7-beta.4](https://github.com/vue-modeler/model/compare/v1.0.7-beta.3...v1.0.7-beta.4) (2025-08-15)
+
+
+### Bug Fixes
+
+* add '@vue-modeler/dc' to external dependencies in Vite config ([c3e03d4](https://github.com/vue-modeler/model/commit/c3e03d498a1af08317e5d82d86229ba0b6c71ded))
+
 ## [1.0.7-beta.3](https://github.com/vue-modeler/model/compare/v1.0.7-beta.2...v1.0.7-beta.3) (2025-08-12)
 
 
