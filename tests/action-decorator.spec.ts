@@ -12,104 +12,133 @@ class TestProtoModel extends ProtoModel {
   testAction(a: number, b: string): Promise<void> {
     return Promise.resolve()
   }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  voidAction(a: number): void {
+    // void method
+  }
+}
+
+const createContext = (
+  originalMethod: (...args: any[]) => void | Promise<void>,
+  methodName: string | symbol = "testAction",
+  contextDto: Partial<ClassMethodDecoratorContext<TestProtoModel, (...args: any[]) => void | Promise<void>>> = {}
+): ClassMethodDecoratorContext<TestProtoModel, (...args: any[]) => void | Promise<void>> => {
+  
+  return {
+    kind: "method",
+    name: methodName,
+    static: false,
+    private: false,
+    addInitializer(): void {
+      // Mock implementation
+    },
+    access: {
+      has(): boolean {
+        return true
+      },
+      get(): (...args: any[]) => void | Promise<void> {
+        return originalMethod
+      }
+    },
+    metadata: {},
+    ...contextDto
+  }
 }
 
 describe('Action decorator', () => {
 
   let mockTarget: TestProtoModel
+  let originalMethod: (...args: any[]) => Promise<void>
+  let voidOriginalMethod: (...args: any[]) => void
   
   beforeEach(() => {
     mockTarget = new TestProtoModel()
+    const proto = Object.getPrototypeOf(mockTarget) as TestProtoModel
+    originalMethod = Object.getOwnPropertyDescriptor(proto, 'testAction')?.value as (...args: any[]) => Promise<void>
+    voidOriginalMethod = Object.getOwnPropertyDescriptor(proto, 'voidAction')?.value as (...args: any[]) => void
   })
-
 
   it('creates new method and save original into Action.actionFlag', () => {
-    const proto = Object.getPrototypeOf(mockTarget) as TestProtoModel
-    const descriptor = Object.getOwnPropertyDescriptor(proto, 'testAction')
-    if (!descriptor) {
-      throw new Error('Descriptor is not defined')
-    }
-
-    const originalMethod = descriptor.value as (...args: any[]) => Promise<void>
-    
-    action(
-      mockTarget,
-      'testAction',
-      descriptor
+    const context = createContext(originalMethod)
+      
+    const wrapper = action(
+      originalMethod,
+      context
     )
 
-    expect(descriptor.value).not.toBe(originalMethod)
-    expect((descriptor.value as OriginalMethodWrapper<[]>)[Action.actionFlag]).toBeDefined() 
-    expect((descriptor.value as OriginalMethodWrapper<[]>)[Action.actionFlag]).toBe(originalMethod) 
-    expect(typeof (descriptor.value as OriginalMethodWrapper<[]>)[Action.actionFlag]).toBe('function')
+    expect(typeof wrapper).toBe('function')
+    expect(wrapper).not.toBe(originalMethod)
+    expect(wrapper[Action.actionFlag]).toBeDefined() 
+    expect(wrapper[Action.actionFlag]).toBe(originalMethod) 
+    expect(typeof wrapper[Action.actionFlag]).toBe('function')
   })
 
-  it('throws error if target is not ProtoModel', () => {
-    class TestNativeModel {
-      testAction(): Promise<void> {
-        return Promise.resolve()
-      }
-    }
-    
-    const mockTarget = new TestNativeModel()
-    
-    const proto = Object.getPrototypeOf(mockTarget) as object
-    const descriptor = Object.getOwnPropertyDescriptor(proto, 'testAction')
-    if (!descriptor) {
-      throw new Error('Descriptor is not defined')
-    }
+  it('throws error if method is static', () => {  
+    const context = createContext(originalMethod, "testAction", { static: true })
 
     expect(() => action(
-      mockTarget,
-      'testAction',
-      descriptor
-    )).toThrow('Target is not instance of ProtoModel')
+      originalMethod,
+      context
+    )).toThrow('Action decorator is not supported for static methods')
   })
 
-  it('throws error if action name is not string', () => {
-    const actionName = Symbol('testAction')
-    class TestNativeModel {
-      [actionName](): Promise<void> {
-        return Promise.resolve()
-      }
-    }
+  it('throws error if method is private', () => {
+    const context = createContext(originalMethod, "testAction", { private: true })
     
-    const mockTarget = new TestNativeModel()
-    
-    const proto = Object.getPrototypeOf(mockTarget) as object
-    const descriptor = Object.getOwnPropertyDescriptor(proto, actionName)
-    if (!descriptor) {
-      throw new Error('Descriptor is not defined')
-    }
-
     expect(() => action(
-      mockTarget,
-      actionName,
-      descriptor  
-    )).toThrow('Action name is not a string')
+      originalMethod,
+      context
+    )).toThrow('Action decorator is not supported for private methods')
   })
 
-  it('throws error if descriptor value is not function', () => {
-    const descriptor = Object.getOwnPropertyDescriptor(mockTarget, 'property')
-    if (!descriptor) {
-      throw new Error('Descriptor is not defined')
-    }
+  it('works with void methods', () => {
+    const context = createContext(voidOriginalMethod, "voidAction")
+    
+    const wrapper = action(
+      voidOriginalMethod,
+      context
+    )
 
-    expect(() => action(
-      mockTarget,
-      'property',
-      descriptor  
-    )).toThrow('Property value is not a function')
+    expect(wrapper).not.toBe(voidOriginalMethod)
+    expect(wrapper[Action.actionFlag]).toBe(voidOriginalMethod)
+  })
+
+  it('creates wrapper with correct function name', () => {
+    const context = createContext(originalMethod, "testAction")
+    
+    const wrapper = action(
+      originalMethod,
+      context
+    )
+
+    expect(wrapper.name).toBe('testAction')
+  })
+
+  it('works with symbol method names', () => {
+    const symbolName = Symbol('symbolAction')
+    const context = createContext(originalMethod, symbolName)
+    
+    const wrapper = action(
+      originalMethod,
+      context
+    )
+
+    // Should still work even with symbol names
+    expect(wrapper.name).toBe(symbolName.toString())
+    expect(wrapper[Action.actionFlag]).toBe(originalMethod)
   })
 })
 
-describe('Original method wrapper ', () => {
+describe('Original method wrapper', () => {
 
   let mockTarget: TestProtoModel
   let actionMock: ActionPublic
   let actionProtectedMethodMock: Mock
+  let wrapper: OriginalMethodWrapper<[number, string]>
+  let originalMethod: (...args: any[]) => Promise<void>
+  
   beforeEach(() => {
-
     mockTarget = new TestProtoModel()
     actionMock = {
       exec: vi.fn(),
@@ -134,8 +163,14 @@ describe('Original method wrapper ', () => {
       resetError: vi.fn(),
     }
     actionProtectedMethodMock = vi.fn().mockReturnValue(actionMock)
-    const proto = Object.getPrototypeOf(mockTarget) as TestProtoModel
-    Object.defineProperty(proto, 'action', {
+    
+    // Create wrapper using the new API
+    originalMethod = mockTarget.testAction.bind(mockTarget)
+    const context = createContext(originalMethod)
+    wrapper = action(originalMethod, context)
+    
+    // Mock the action method on the target
+    Object.defineProperty(mockTarget, 'action', {
       value: actionProtectedMethodMock,
       writable: false,
       enumerable: false,
@@ -144,28 +179,14 @@ describe('Original method wrapper ', () => {
   })
 
   it('gets action and calls exec with original method args', async () => {
-    const proto = Object.getPrototypeOf(mockTarget) as TestProtoModel
-    const descriptor = Object.getOwnPropertyDescriptor(proto, 'testAction')
-    if (!descriptor) {
-      throw new Error('Descriptor is not defined')
-    }
-
-    const originalMethod = descriptor.value as (...args: any[]) => Promise<void>
+    // Bind the wrapper to the target
+    const boundWrapper = wrapper.bind(mockTarget)
     
-    action(
-      mockTarget,
-      'testAction',
-      descriptor
-    )
-
-    const originalMethodWrapper = descriptor.value as OriginalMethodWrapper<[]>
-    Object.defineProperty(mockTarget, 'testAction', descriptor);
+    await boundWrapper(1, 'test')
     
-    await mockTarget.testAction(1, 'test')
     expect(actionProtectedMethodMock).toHaveBeenCalled()
-
-    const actionCallArg = (actionProtectedMethodMock).mock.calls[0][0] as OriginalMethodWrapper<[]>
-    expect(actionCallArg).toBe(originalMethodWrapper)
+    const actionCallArg = actionProtectedMethodMock.mock.calls[0][0] as OriginalMethodWrapper<[number, string]>
+    expect(actionCallArg).toBe(wrapper)
     expect(actionCallArg[Action.actionFlag]).toBe(originalMethod)
     
     expect(actionMock.exec).toHaveBeenCalled()

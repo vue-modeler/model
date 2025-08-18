@@ -11,13 +11,13 @@ describe('Normal asynchronous method', () => {
     const apiMock = createApiMock()
     const model = createTestModel(apiMock)
 
-    expect(typeof model.normalAsyncMethodwithVoidResult).toBe('function')
+    expect(typeof model.normalAsyncMethodWithVoidResult).toBe('function')
 
     try {
-      await model.normalAsyncMethodwithVoidResult.exec('I won`t be called')
+      await model.normalAsyncMethodWithVoidResult.exec('I won`t be called')
     } catch (error) {
       expect(error).toBeInstanceOf(TypeError)
-      expect((error as Error).message).toEqual('model.normalAsyncMethodwithVoidResult.exec is not a function')
+      expect((error as Error).message).toEqual('model.normalAsyncMethodWithVoidResult.exec is not a function')
     }
   })
 
@@ -83,7 +83,27 @@ describe('Synchronous method with @action decorator', () => {
     const apiMock = createApiMock()
     const model = createTestModel(apiMock)
   
+    expect(model.normalSyncMethodWithVoid).instanceOf(Action)
     expect(model.normalSyncMethodWithReturnDataAsAction).instanceOf(Action)
+  })
+  
+  test('and void result is Action and returns Promise<undefined>', async () => {
+    const apiMock = createApiMock()
+    const model = createTestModel(apiMock)
+  
+    const action = model.normalSyncMethodWithVoid as unknown as Action
+    // eslint-disable-next-line @typescript-eslint/no-confusing-void-expression
+    const result = await action.exec()
+    expect(result).toBeUndefined()
+  })
+  test('and not void result is Action and returns Promise<void>', async () => {
+    const apiMock = createApiMock()
+    const model = createTestModel(apiMock)
+  
+    const action = model.normalSyncMethodWithReturnDataAsAction as unknown as Action
+    // eslint-disable-next-line @typescript-eslint/no-confusing-void-expression
+    const result = await action.exec(10)
+    expect(result).toBeUndefined()
   })
   
 })
