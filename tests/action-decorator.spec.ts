@@ -20,10 +20,10 @@ class TestProtoModel extends ProtoModel {
 }
 
 const createContext = (
-  originalMethod: (...args: any[]) => void | Promise<void>,
+  originalMethod: (...args: any[]) => Promise<void>,
   methodName: string | symbol = "testAction",
-  contextDto: Partial<ClassMethodDecoratorContext<TestProtoModel, (...args: any[]) => void | Promise<void>>> = {}
-): ClassMethodDecoratorContext<TestProtoModel, (...args: any[]) => void | Promise<void>> => {
+  contextDto: Partial<ClassMethodDecoratorContext<TestProtoModel, (...args: any[]) => Promise<void>>> = {}
+): ClassMethodDecoratorContext<TestProtoModel, (...args: any[]) => Promise<void>> => {
   
   return {
     kind: "method",
@@ -37,7 +37,7 @@ const createContext = (
       has(): boolean {
         return true
       },
-      get(): (...args: any[]) => void | Promise<void> {
+      get(): (...args: any[]) => Promise<void> {
         return originalMethod
       }
     },
@@ -50,13 +50,11 @@ describe('Action decorator', () => {
 
   let mockTarget: TestProtoModel
   let originalMethod: (...args: any[]) => Promise<void>
-  let voidOriginalMethod: (...args: any[]) => void
   
   beforeEach(() => {
     mockTarget = new TestProtoModel()
     const proto = Object.getPrototypeOf(mockTarget) as TestProtoModel
     originalMethod = Object.getOwnPropertyDescriptor(proto, 'testAction')?.value as (...args: any[]) => Promise<void>
-    voidOriginalMethod = Object.getOwnPropertyDescriptor(proto, 'voidAction')?.value as (...args: any[]) => void
   })
 
   it('creates new method and save original into Action.actionFlag', () => {
@@ -90,18 +88,6 @@ describe('Action decorator', () => {
       originalMethod,
       context
     )).toThrow('Action decorator is not supported for private methods')
-  })
-
-  it('works with void methods', () => {
-    const context = createContext(voidOriginalMethod, "voidAction")
-    
-    const wrapper = action(
-      voidOriginalMethod,
-      context
-    )
-
-    expect(wrapper).not.toBe(voidOriginalMethod)
-    expect(wrapper[Action.actionFlag]).toBe(voidOriginalMethod)
   })
 
   it('creates wrapper with correct function name', () => {
