@@ -1,3 +1,25 @@
+## [1.0.7-beta.4](https://github.com/vue-modeler/model/compare/v1.0.7-beta.3...v1.0.7-beta.4) (2025-08-15)
+
+
+### Bug Fixes
+
+* add '@vue-modeler/dc' to external dependencies in Vite config ([c3e03d4](https://github.com/vue-modeler/model/commit/c3e03d498a1af08317e5d82d86229ba0b6c71ded))
+
+## [1.0.7-beta.3](https://github.com/vue-modeler/model/compare/v1.0.7-beta.2...v1.0.7-beta.3) (2025-08-12)
+
+
+### Bug Fixes
+
+* update .gitignore and adjust peer dependency version in package.json ([63f68df](https://github.com/vue-modeler/model/commit/63f68df6117ebfb6e2fb9dd7554de607ad4c3dff))
+* update pnpm-lock.yaml for dependency version specification ([fc52be8](https://github.com/vue-modeler/model/commit/fc52be86c31dbc333ae6ae27ab6ed98fa23c4056))
+
+## [1.0.7-beta.2](https://github.com/vue-modeler/model/compare/v1.0.7-beta.1...v1.0.7-beta.2) (2025-08-09)
+
+
+### Bug Fixes
+
+* enhance action decorator to accept both string and symbol types ([da62a24](https://github.com/vue-modeler/model/commit/da62a24041886cd5bc43916a3643b3eaf8a296e8))
+
 ## [1.0.7-beta.1](https://github.com/vue-modeler/model/compare/v1.0.6...v1.0.7-beta.1) (2025-08-03)
 
 

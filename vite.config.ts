@@ -30,7 +30,7 @@ export default defineConfig({
       formats: ['es', 'cjs'],
     },
     rollupOptions: {
-      external: ['vue'],
+      external: ['vue', '@vue-modeler/dc'],
       output: {
         // Provide global variables to use in the UMD build
         // for externalized deps
