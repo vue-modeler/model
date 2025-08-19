@@ -1,3 +1,20 @@
+## [1.0.7-beta.5](https://github.com/vue-modeler/model/compare/v1.0.7-beta.4...v1.0.7-beta.5) (2025-08-19)
+
+
+### Bug Fixes
+
+* **tests:** update action decorator tests for promise handling ([367ed0f](https://github.com/vue-modeler/model/commit/367ed0fa2fbac2c6ae9d5ea76038dc474337b13a))
+
+
+### Code Refactoring
+
+* **decorator:** update TypeScript configuration and action decorator ([5dceb0c](https://github.com/vue-modeler/model/commit/5dceb0c53acb87fced831ecbd5ead191bb9c90f1))
+
+
+### BREAKING CHANGES
+
+* **decorator:** used new syntax for `action` decorator based on Decorator Proposal for TC39. It is not compatible with TypeScript experimental decorator. New syntax working only with TypeScript >= 5.0. see https://devblogs.microsoft.com/typescript/announcing-typescript-5-0/#decorators
+
 ## [1.0.7-beta.4](https://github.com/vue-modeler/model/compare/v1.0.7-beta.3...v1.0.7-beta.4) (2025-08-15)
 
 
