@@ -145,15 +145,21 @@ export class TestProtoModel extends ParentProtoModel {
     return Promise.reject(new Error(message))
   }
 
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
   @action async normalAsyncMethodWithReturnDataAsAction (data: number): Promise<number> {
     return Promise.resolve(data)
   }
 
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
   @action normalSyncMethodWithReturnDataAsAction (num: number): number {
     return num + 1
   }
   
   
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
   @action normalSyncMethodWithVoid (): void {
     return 
   }
@@ -194,8 +200,9 @@ export class TestProtoModel extends ParentProtoModel {
   
   
   tryGetActionByMethod (): ShallowReactive<ActionPublic> {
-    // eslint-disable-next-line @typescript-eslint/unbound-method
-    return this.action(this.normalSyncMethodWithError)
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    return this.action(this.normalSyncMethodWithError.bind(this))
   }
   
 }
