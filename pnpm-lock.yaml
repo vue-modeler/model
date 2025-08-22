@@ -8,9 +8,6 @@ importers:
 
   .:
     dependencies:
-      '@vue-modeler/dc':
-        specifier: ~2.1.0 || ~3.0.0
-        version: 2.1.0(vue@2.7.16)
       vue:
         specifier: '>=2.7 <4.0.0'
         version: 2.7.16
@@ -757,11 +754,6 @@ packages:
 
   '@volar/typescript@2.4.12':
     resolution: {integrity: sha512-HJB73OTJDgPc80K30wxi3if4fSsZZAOScbj2fcicMuOPoOkcf9NNAINb33o+DzhBdF9xTKC1gnPmIRDous5S0g==}
-
-  '@vue-modeler/dc@2.1.0':
-    resolution: {integrity: sha512-xTaUcxErDoteG/n1UqLfgvJfZ7omiusdtcCN/8pXMRkQTb2qgrklNlfKexqp3PSf1daHXMQd+99XthGPHOgDXA==}
-    peerDependencies:
-      vue: ^2.7
 
   '@vue/compiler-core@3.5.13':
     resolution: {integrity: sha512-oOdAkwqUfW1WqpwSYJce06wvt6HljgY3fGeM9NcVA1HaYOij3mZG9Rkysn0OHuyUAGMbEbARIpsG+LPVlBJ5/Q==}
@@ -3446,10 +3438,6 @@ snapshots:
       '@volar/language-core': 2.4.12
       path-browserify: 1.0.1
       vscode-uri: 3.1.0
-
-  '@vue-modeler/dc@2.1.0(vue@2.7.16)':
-    dependencies:
-      vue: 2.7.16
 
   '@vue/compiler-core@3.5.13':
     dependencies:
