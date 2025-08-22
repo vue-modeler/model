@@ -16,6 +16,7 @@ export default defineConfig({
     environment: "jsdom",
     coverage: {
       exclude: [
+        './docs/**',
         '**/index.ts',
         ...coverageConfigDefaults.exclude
       ],

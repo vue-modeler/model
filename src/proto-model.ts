@@ -1,8 +1,9 @@
 import { computed, ComputedGetter, ComputedRef, DebuggerOptions, effectScope, Ref, ref, ShallowReactive, shallowReactive, watch, WatchStopHandle } from 'vue'
 
 import { Action } from './action'
-import { ActionPublic, ActionStateName, OriginalMethod, OriginalMethodWrapper } from './types'
+import { ActionPublic, ActionStateName, Model, OriginalMethod, OriginalMethodWrapper } from './types'
 import { ActionInternalError } from './error'
+import { createModel } from './create-model'
 
 
 type ModelConstructor = new (...args: any[]) => ProtoModel
@@ -21,6 +22,19 @@ export abstract class ProtoModel {
   // watchers are stored in a set to avoid memory leaks
   protected _unwatchers = new Set<ReturnType<typeof watch>>()
 
+  static model<T extends ProtoModel, Args extends unknown[]>(
+    this: new (...args: Args) => T,
+    ...args: Args
+  ): Model<T> {
+    if (this.prototype === ProtoModel.prototype) {
+      throw new Error('ProtoModel is abstract class and can not be instantiated')
+    }
+
+    const protoModel = new this(...args)
+
+    return createModel(protoModel)
+  }
+  
   get hasPendingActions (): boolean {
     return !!this.getActionStatesRef(Action.possibleState.pending).value
   }
