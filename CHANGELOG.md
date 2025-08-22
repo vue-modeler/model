@@ -1,3 +1,5 @@
+## [1.0.7-beta.6](https://github.com/vue-modeler/model/compare/v1.0.7-beta.5...v1.0.7-beta.6) (2025-08-22)
+
 ## [1.0.7-beta.5](https://github.com/vue-modeler/model/compare/v1.0.7-beta.4...v1.0.7-beta.5) (2025-08-19)
 
 
