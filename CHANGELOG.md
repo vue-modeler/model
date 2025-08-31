@@ -1,5 +1,16 @@
 ## [1.0.7-beta.6](https://github.com/vue-modeler/model/compare/v1.0.7-beta.5...v1.0.7-beta.6) (2025-08-22)
 
+
+### Code Refactoring
+
+ * implements new way to create a model. The factory function `model` has been removed. The static method "model" is used to create the model. [qd98f069]
+    
+### BREAKING CHANGES
+* the factory function `model` has been removed
+* the model instance is not automatically placed in the dependency container. You must put the model instance into the container yourself when configuring dependencies.
+* dependency on vue-modeler/dc has been removed
+
+
 ## [1.0.7-beta.5](https://github.com/vue-modeler/model/compare/v1.0.7-beta.4...v1.0.7-beta.5) (2025-08-19)
 
 
