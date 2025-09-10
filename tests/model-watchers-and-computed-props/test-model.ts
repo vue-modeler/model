@@ -29,8 +29,8 @@ export class TestProtoModel extends ProtoModel {
 
     this.watch(
       () => this._counter.value,
-      this.watchers.watcherInConstructor,
-    )
+      this.watchers.watcherInConstructor
+    )  
   }
 
   get counter (): number {

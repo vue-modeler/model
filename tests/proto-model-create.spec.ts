@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
 import { isShallow } from 'vue'
-import { createModel } from '../src/create-model'
 import { ProtoModel } from '../src/proto-model'
 import { Model } from '../src/types'
 
@@ -29,7 +28,7 @@ class TestProtoModelWithActions extends ProtoModel {
   }
 }
 
-describe('ProtoModel.create', () => {
+describe('ProtoModel.model', () => {
   it('creates a model instance with correct arguments', () => {
     const model = TestProtoModel.model('TestModel', 42)
 
@@ -58,20 +57,6 @@ describe('ProtoModel.create', () => {
 
     expect(model).toBeInstanceOf(TestProtoModelWithActions)
     expect(model.api).toBe(api)
-  })
-
-  it('creates model with same result as createModel function', () => {
-    const protoModel = new TestProtoModel('TestModel', 42)
-    const modelViaCreate = TestProtoModel.model('TestModel', 42)
-    const modelViaFunction = createModel(protoModel)
-
-    // Both should be reactive models
-    expect(isShallow(modelViaCreate)).toBe(true)
-    expect(isShallow(modelViaFunction)).toBe(true)
-
-    // Both should have same properties
-    expect(modelViaCreate.name).toBe(modelViaFunction.name)
-    expect(modelViaCreate.value).toBe(modelViaFunction.value)
   })
 
   it('maintains type safety', () => {
@@ -109,13 +94,7 @@ describe('ProtoModel.create', () => {
   })
 
   it('throws error when trying to create ProtoModel directly', () => {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
     expect(() => {(ProtoModel as any).model()}).toThrow('ProtoModel is abstract class and can not be instantiated')
-  })
-
-  it('allows creation of concrete ProtoModel subclasses', () => {
-    expect(() => {
-      TestProtoModel.model('Test', 42)
-    }).not.toThrow()
   })
 })
