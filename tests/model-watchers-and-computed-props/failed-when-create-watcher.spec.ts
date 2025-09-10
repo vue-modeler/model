@@ -1,5 +1,4 @@
 import { expect, Mock, test, vi } from 'vitest'
-import { createModel } from '../../src'
 import { TestProtoModel } from './test-model'
 
 
@@ -26,9 +25,6 @@ const createWatcherMocks = (): WatcherMock => ({
   computedInConstructor: vi.fn(),
 })
 
-test('createModel throws error when watchStopHandler is undefined', () => {
-  
-  expect(() => {
-    createModel(new TestProtoModel(0, createWatcherMocks()))
-  }).toThrow('watchStopHandler is undefined')
+test('TestProtoModel.model throws error when watchStopHandler is undefined', () => {
+  expect(() => TestProtoModel.model(0, createWatcherMocks())).toThrow('watchStopHandler is undefined')
 })

@@ -168,7 +168,7 @@ export class Action<Args extends any[] = unknown[]> {
     if (!(result instanceof Promise)) {
       this.state = Action.possibleState.ready
 
-      return Promise.resolve(result)
+      return Promise.resolve()
     }
 
     const actionPromise = result
@@ -300,14 +300,6 @@ export class Action<Args extends any[] = unknown[]> {
   }
 
   protected ready (): this {
-    // if (this.isError) {
-    //   throw new ActionStatusConflictError(
-    //     this.name,
-    //     this.state,
-    //     Action.possibleState.ready,
-    //   )
-    // }
-
     this.state = Action.possibleState.ready
 
     return this

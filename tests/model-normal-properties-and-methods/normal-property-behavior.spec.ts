@@ -12,7 +12,7 @@ describe('Model with normal properties', () => {
 
   test('preserves access to normal properties', () => {
   
-    expect(model.normalPropery).toBe(1)
+    expect(model.normalProperty).toBe(1)
     expect(model.normalParentPropery).toBe(1)
   })
 
@@ -23,10 +23,10 @@ describe('Model with normal properties', () => {
 
   // It is possable but not recomended
   test('allows set new values to public normal properties', () => {
-    expect(() => { model.normalPropery = 3 }).not.toThrow()
+    expect(() => { model.normalProperty = 3 }).not.toThrow()
     expect(() => { model.normalParentPropery = 3 }).not.toThrow()
     
-    expect(model.normalPropery).toBe(3)
+    expect(model.normalProperty).toBe(3)
     expect(model.normalParentPropery).toBe(3)
   })
 }) 

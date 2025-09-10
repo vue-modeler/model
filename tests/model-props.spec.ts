@@ -6,6 +6,24 @@ import { ProtoModel } from '../src/proto-model'
 import { Model } from '../src/types'
 
 class TestProtoModel extends ProtoModel {
+  
+  protected _counter = 0
+  protected _innerState  = {}
+
+  get counter(): number {
+    return this._counter
+  }
+
+  get innerState(): Record<string, unknown> {
+    return this._innerState
+  }
+
+  @action increment(): Promise<void> {
+    this._counter++
+    
+    return Promise.resolve()
+  }
+
   regularMethod(): string {
     return 'regular'
   }

@@ -2,10 +2,10 @@ import { Action } from './action'
 import { ProtoModel } from './proto-model'
 
 export type ActionPublic = Omit<Action, 'call'>
-export type OriginalMethod<Args extends unknown[] = unknown[]> = (...args: Args) => void | Promise<void>
+export type OriginalMethod = (...args: any[]) => Promise<void>
 
 export interface OriginalMethodWrapper<Args extends unknown[] = unknown[]> {
-  (...args: Args): void | Promise<void>
+  (...args: Args): Promise<void>
   [Action.actionFlag]: OriginalMethod
 }
 
