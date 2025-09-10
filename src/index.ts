@@ -1,4 +1,3 @@
-export * from './create-model'
 export * from './proto-model'
 export * from './types'
 export * from './error'
