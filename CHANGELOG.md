@@ -1,3 +1,20 @@
+# [1.1.0-beta.1](https://github.com/vue-modeler/model/compare/v1.0.7-beta.6...v1.1.0-beta.1) (2025-09-10)
+
+
+### Code Refactoring
+
+* **createModel:** remove export of create-model ([c263002](https://github.com/vue-modeler/model/commit/c263002d51ae38e77a0173d95b4ac04e4dfa919e))
+
+
+### Features
+
+* **proto-model:** enhance watch functionality and improve documentation ([749a2b9](https://github.com/vue-modeler/model/commit/749a2b9979216984c0643bc04dc6d0230e20d7d4))
+
+
+### BREAKING CHANGES
+
+* **createModel:** -  createModel function removed from public module API
+
 ## [1.0.7-beta.6](https://github.com/vue-modeler/model/compare/v1.0.7-beta.5...v1.0.7-beta.6) (2025-08-22)
 
 
