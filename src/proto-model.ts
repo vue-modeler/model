@@ -1,4 +1,4 @@
-import { computed, ComputedGetter, ComputedRef, DebuggerOptions, effectScope, Ref, ref, ShallowReactive, shallowReactive, watch, WatchStopHandle } from 'vue'
+import { computed, ComputedGetter, ComputedRef, DebuggerOptions, effectScope, Ref, ref, ShallowReactive, shallowReactive, watch, watchEffect, WatchStopHandle } from 'vue'
 
 import { Action } from './action'
 import { ActionPublic, ActionStateName, Model, OriginalMethod, OriginalMethodWrapper } from './types'
@@ -20,8 +20,15 @@ export abstract class ProtoModel {
   protected _actionsSize = 0
 
   // watchers are stored in a set to avoid memory leaks
-  protected _unwatchers = new Set<ReturnType<typeof watch>>()
+  protected _watchStopHandlers = new Set<ReturnType<typeof watch>>()
 
+  /**
+   * Creates a model instance.
+   * 
+   * @param args - arguments for the model constructor.
+   * @returns model instance.
+   * @see src/create-model.ts
+   */
   static model<T extends ProtoModel, Args extends unknown[]>(
     this: new (...args: Args) => T,
     ...args: Args
@@ -43,16 +50,80 @@ export abstract class ProtoModel {
     return !!this.getActionStatesRef(Action.possibleState.error).value
   }
 
+  /**
+   * Registers watcher in the model effect scope.
+   * It uses "watch" or "watchEffect" function from Vue.
+   *
+   * It has restrictions. It can't be used with own not reactive properties.
+   * This is because `this` in inner context is not shallow reactive.
+   * 
+   * Example with error:
+   * 
+   * ```ts
+   * class TestModel extends ProtoModel {
+   *   protected _someProperty: string = ''
+   *   
+   *   constructor () {
+   *     super()
+   *     
+   *     // This watcher will not work because 
+   *     // `this` and `this.someProperty`
+   *     // are not reactive
+   *     this.watch(
+   *       () => this.someProperty, 
+   *       (value: string) => {
+   *         console.log(value)
+   *       }
+   *     )
+   *   }
+   * 
+   *   get someProperty(): string { 
+   *     return this._someProperty
+   *   }
+   * }
+   * 
+   * To watch for own properties you need to define it as reactive property
+   * with ref or this.computed.
+   * 
+   * ```ts
+   * class TestModel extends ProtoModel {
+   *   protected _someProperty = ref('')
+   *   
+   *   constructor () {
+   *     super()
+   * 
+   *     // This watcher will work because `this._someProperty` is reactive
+   *     this.watch(
+   *       () => this._someProperty.value, 
+   *       (value: string) => {
+   *         console.log(value)
+   *       }
+   *     )
+   *   }
+   * }
+   * ```
+   * 
+   * @param args - arguments for "watch" or "watchEffect" function.
+   * @see src/create-model.ts
+   */
   protected watch (...args: unknown[]): WatchStopHandle {
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore:next-line
-    const watchStopHandler = this._effectScope.run(() => watch(...args))
+    if (args.length === 0) {
+      throw new Error('watch requires at least one argument')
+    }
 
+    const watchStopHandler = (args.length === 1)
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore:next-line
+      ? this._effectScope.run(() => watchEffect(args[0]))
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore:next-line
+      : this._effectScope.run(() => watch(...args))
+      
     if (!watchStopHandler) {
       throw new Error('watchStopHandler is undefined')
     }
 
-    this._unwatchers.add(watchStopHandler)
+    this._watchStopHandlers.add(watchStopHandler)
 
     return watchStopHandler
   }
@@ -100,6 +171,7 @@ export abstract class ProtoModel {
    * 
    * From external context of model this method is implicitly used to get or create an action.
    * It called inside get hook proxy of action.
+   * @see src/create-model.ts
    * 
    * ```ts
    * class TestModel extends ProtoModel {
@@ -113,9 +185,10 @@ export abstract class ProtoModel {
    * 
    * In internal context of model this method is used to get Action instance.
    * You can`t call it as `testModel.testAction.exec()` or `testModel.testAction.isPending` etc.
-   * because TypeScript sees it as  standard  method of model instance and you will get error about type.
+   * because TypeScript sees it as standard method of the class and you will get error about type.
    * 
-   * To get Action instance in internal context of model you need to call it as `testModel.action(testModel.testAction)`
+   * To get Action instance in internal context of model
+   * you need to call it as `testModel.action(testModel.testAction)`
    *
    * ```ts
    * class TestModel extends ProtoModel {
@@ -176,8 +249,8 @@ export abstract class ProtoModel {
   }
 
   destructor (): void {
-    this._unwatchers.forEach((unwatcher) => { unwatcher() })
-    this._unwatchers = new Set()
+    this._watchStopHandlers.forEach((stopHandler) => { stopHandler() })
+    this._watchStopHandlers = new Set()
 
     this._effectScope.stop()
   }

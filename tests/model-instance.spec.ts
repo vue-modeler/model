@@ -1,10 +1,9 @@
-import { describe, expect, it, test } from 'vitest'
+import { describe, expect, it } from 'vitest'
+import { isShallow } from 'vue'
+import { Action } from '../src/action'
 import { action } from '../src/decorator/action'
 import { ProtoModel } from '../src/proto-model'
-import { createModel } from '../src/create-model'
-import { Action } from '../src/action'
 import { Model } from '../src/types'
-import { isShallow } from 'vue'
 
 class TestProtoModel extends ProtoModel {
   regularMethod(): string {
@@ -20,20 +19,20 @@ class TestProtoModel extends ProtoModel {
 describe('Model', () => {
 
   it('is shallow reactive', () => {
-    const model = createModel(new TestProtoModel())
+    const model = TestProtoModel.model()
 
     expect(isShallow(model)).toBeTruthy()
   })
   
   it('preserves original methods', () => {
-    const model = createModel(new TestProtoModel())
+    const model = TestProtoModel.model()
 
     expect(model.regularMethod).toBeDefined()
     expect(typeof model.regularMethod).toBe('function')
   })
 
   it('returns action for decorated methods', () => {
-    const model = createModel(new TestProtoModel())
+    const model = TestProtoModel.model()
 
     const action = model.actionMethod
     expect(action).toBeDefined()
@@ -42,21 +41,21 @@ describe('Model', () => {
   })
 
   it('preserves check for instanceof', () => {
-    const model = createModel(new TestProtoModel())
+    const model = TestProtoModel.model()
 
     expect(model instanceof TestProtoModel).toBe(true)
     expect(model instanceof ProtoModel).toBe(true)
   })
 
   it('preserves self type', () => {
-    const model = createModel(new TestProtoModel())
+    const model = TestProtoModel.model()
 
     // Type check
     const typedModel: Model<TestProtoModel> = model
     expect(typedModel).toBe(model)
   })
   it('isModelOf returns true for self', () => {
-    const model = createModel(new TestProtoModel())
+    const model = TestProtoModel.model()
 
     expect(model.isModelOf(TestProtoModel)).toBe(true)
   })
@@ -67,19 +66,8 @@ describe('Model', () => {
       }
     }
 
-    const model = createModel(new TestProtoModel())
+    const model = TestProtoModel.model()
 
     expect(model.isModelOf(OtherModel)).toBe(false)
   })
-})
-
-test('createModel throws error when wrapped instance is not ProtoModel', () => {
-  class NotProtoModel {
-    regularMethod(): string {
-      return 'regular'
-    }
-  }
-
-  const fakeProtoModel = new NotProtoModel()
-  expect(() => createModel(fakeProtoModel as never as ProtoModel)).toThrow('ProtoModel instance is required')
 })
