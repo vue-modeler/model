@@ -7,6 +7,31 @@ import { Model, ModelAdapterProxyConstructor, OriginalMethodWrapper } from './ty
  
 const ModelProxy = Proxy as ModelAdapterProxyConstructor
 
+/**
+ * Wraps ProtoModel instance with proxy to handle get traps for actions
+ * and to return Action instance instead of original method.
+ * 
+ * ```ts
+ * class TestModel extends ProtoModel {
+ *   constructor() {
+ *     super()
+ *   }
+ * 
+ *   @action async someAction(): Promise<void> {
+ *     return Promise.resolve()
+ *   }
+ * }
+ * 
+ * const model = createModel(new TestModel())
+ * const action = model.someAction // will return Action instance instead of original method
+ * model.someAction.exec() // will execute action
+ * model.someAction.isPending // will return true if action is pending
+ * model.someAction.error // will return error if action is errored
+ * ```
+ * @param protoModel - ProtoModel instance.
+ * @returns model instance wrapped with proxy.
+ * @see src/proto-model.ts
+ */
 export function createModel<Target extends ProtoModel> (
   protoModel: Target,
 ): Model<Target> {
@@ -41,7 +66,7 @@ export function createModel<Target extends ProtoModel> (
           // "this.someAction" will invoke get trap from proxy and
           // return Action instance instead of original method.
           // Then "this.action(this.someAction)" will throw an error "Action not found".
-          // because "this.action" requires method as argument, not Action instance.
+          // because "this.action" requires method as argument, not the action instance.
           return targetProperty.bind(target)
           
           // Example with error, if we will not bind "target" to the property:
@@ -53,11 +78,11 @@ export function createModel<Target extends ProtoModel> (
           //
           //   @action async otherAction() {
           //     ...
-          //     // first of all this line will throw typescript error
-          //     // because in the class context "this.someAction" is method, not action
+          //     // first of all this line will throw type error
+          //     // because in the class context "this.someAction" is method, not the action instance
           //     this.someAction.exec() 
           //     
-          //     // So, to invoke action or get his state
+          //     // So, to invoke the action or get his state
           //     // we need to get action as object.
           //     // But any of lines below will throw error "Action not found"
           //     // because "this" inside property will be equal proxy object
