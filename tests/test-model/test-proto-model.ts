@@ -1,6 +1,6 @@
 import { ShallowReactive } from 'vue'
 
-import { action } from '../../src/decorator/action'
+import { action } from '../../src/decorator'
 import { ActionPublic } from '../../src/types'
 import { ParentProtoModel } from './parent-proto-model'
 
@@ -12,7 +12,7 @@ export interface ApiService {
 export class TestProtoModel extends ParentProtoModel {
   readonly debug = 'debug'
 
-  normalPropery = 1
+  normalProperty = 1
 
   constructor (
     readonly api: {
@@ -141,17 +141,29 @@ export class TestProtoModel extends ParentProtoModel {
    * But it is not Action, because decorator is not applied.
    * Thus, trying to call model.normalAsyncMethod.exec() will THROW AN ERROR IN RUNTIME
    */
-  async normalAsyncMethodwithVoidResult (message: string): Promise<void> {
+  async normalAsyncMethodWithVoidResult (message: string): Promise<void> {
     return Promise.reject(new Error(message))
   }
 
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
   @action async normalAsyncMethodWithReturnDataAsAction (data: number): Promise<number> {
     return Promise.resolve(data)
   }
 
-  @action normalSyncMethodWithReturnDataAsAction (): number {
-    return 1
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
+  @action normalSyncMethodWithReturnDataAsAction (num: number): number {
+    return num + 1
   }
+  
+  
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
+  @action normalSyncMethodWithVoid (): void {
+    return 
+  }
+
   /**
    * All methods below are not considered as Actions
    * because an Action is an asynchronous method with void result.
@@ -188,8 +200,9 @@ export class TestProtoModel extends ParentProtoModel {
   
   
   tryGetActionByMethod (): ShallowReactive<ActionPublic> {
-    // eslint-disable-next-line @typescript-eslint/unbound-method
-    return this.action(this.normalSyncMethodWithError)
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    return this.action(this.normalSyncMethodWithError.bind(this))
   }
   
 }
