@@ -1,3 +1,27 @@
+## [2.0.0-beta.1](https://github.com/vue-modeler/model/compare/v1.0.7...v2.0.0-beta.1) (2025-09-12)
+
+### ⚠ BREAKING CHANGES
+
+* **createModel:** -  createModel function removed from public module API
+* **decorator:** used new syntax for `action` decorator based on Decorator Proposal for TC39. It is not compatible with TypeScript experimental decorator. New syntax working only with TypeScript >= 5.0. see https://devblogs.microsoft.com/typescript/announcing-typescript-5-0/#decorators
+
+### Features
+
+* **proto-model:** enhance watch functionality and improve documentation ([749a2b9](https://github.com/vue-modeler/model/commit/749a2b9979216984c0643bc04dc6d0230e20d7d4))
+
+### Bug Fixes
+
+* add '@vue-modeler/dc' to external dependencies in Vite config ([c3e03d4](https://github.com/vue-modeler/model/commit/c3e03d498a1af08317e5d82d86229ba0b6c71ded))
+* enhance action decorator to accept both string and symbol types ([da62a24](https://github.com/vue-modeler/model/commit/da62a24041886cd5bc43916a3643b3eaf8a296e8))
+* **tests:** update action decorator tests for promise handling ([367ed0f](https://github.com/vue-modeler/model/commit/367ed0fa2fbac2c6ae9d5ea76038dc474337b13a))
+* update .gitignore and adjust peer dependency version in package.json ([63f68df](https://github.com/vue-modeler/model/commit/63f68df6117ebfb6e2fb9dd7554de607ad4c3dff))
+* update pnpm-lock.yaml for dependency version specification ([fc52be8](https://github.com/vue-modeler/model/commit/fc52be86c31dbc333ae6ae27ab6ed98fa23c4056))
+
+### Code Refactoring
+
+* **createModel:** remove export of create-model ([c263002](https://github.com/vue-modeler/model/commit/c263002d51ae38e77a0173d95b4ac04e4dfa919e))
+* **decorator:** update TypeScript configuration and action decorator ([5dceb0c](https://github.com/vue-modeler/model/commit/5dceb0c53acb87fced831ecbd5ead191bb9c90f1))
+
 # [2.0.0](https://github.com/vue-modeler/model/compare/v1.0.7...v1.1.0) (2025-09-10)
 
 
