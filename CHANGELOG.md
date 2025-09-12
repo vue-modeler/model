@@ -18,12 +18,12 @@
 ### Features
 
 * **proto-model:** enhance watch functionality and improve documentation ([749a2b9](https://github.com/vue-modeler/model/commit/749a2b9979216984c0643bc04dc6d0230e20d7d4))
-
+* **proto-model:** added static  method `model` as named constructor to create instance instead using functions `createModel` and `model` 
 
 ### BREAKING CHANGES
 
-* createModel function removed from public module API
-* the factory function `model` has been removed
+* `createModel` function removed from public module API,  instead use the new static method `model` from `ProtoModel`
+* the factory function `model` has been removed, instead use the new static method `model` from `ProtoModel`
 * the model instance is not automatically placed in the dependency container. You must put the model instance into the container yourself when configuring dependencies.
 * dependency on vue-modeler/dc has been removed
 * **decorator:** used new syntax for `action` decorator based on Decorator Proposal for TC39. It is not compatible with TypeScript experimental decorator. New syntax working only with TypeScript >= 5.0. see https://devblogs.microsoft.com/typescript/announcing-typescript-5-0/#decorators
