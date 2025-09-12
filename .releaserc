@@ -7,10 +7,8 @@
         [
             "@semantic-release/commit-analyzer",
             {
-                "preset": "angular",
+                "preset": "conventionalcommits",
                 "releaseRules": [
-                    { "type": "docs", "scope": "README", "release": "patch" },
-                    { "type": "refactor", "release": "patch" },
                     { "scope": "no-release", "release": false }
                 ],
                 "parserOpts": {
@@ -21,12 +19,7 @@
         [
             "@semantic-release/release-notes-generator",
             {
-                "parserOpts": {
-                    "noteKeywords": ["BREAKING CHANGE", "BREAKING CHANGES"]
-                },
-                "writerOpts": {
-                    "commitsSort": ["subject", "scope"]
-                }
+                "preset": "conventionalcommits"
             }
         ],
         "@semantic-release/changelog",
