@@ -1,4 +1,4 @@
-# [1.1.0](https://github.com/vue-modeler/model/compare/v1.0.7...v1.1.0) (2025-09-10)
+# [2.0.0](https://github.com/vue-modeler/model/compare/v1.0.7...v1.1.0) (2025-09-10)
 
 
 ### Bug Fixes
@@ -7,13 +7,11 @@
 * enhance action decorator to accept both string and symbol types ([da62a24](https://github.com/vue-modeler/model/commit/da62a24041886cd5bc43916a3643b3eaf8a296e8))
 * update .gitignore and adjust peer dependency version in package.json ([63f68df](https://github.com/vue-modeler/model/commit/63f68df6117ebfb6e2fb9dd7554de607ad4c3dff))
 * **tests:** update action decorator tests for promise handling ([367ed0f](https://github.com/vue-modeler/model/commit/367ed0fa2fbac2c6ae9d5ea76038dc474337b13a))
-* update pnpm-lock.yaml for dependency version specification ([fc52be8](https://github.com/vue-modeler/model/commit/fc52be86c31dbc333ae6ae27ab6ed98fa23c4056))
-
 
 ### Code Refactoring
 
 *  implements new way to create a model ([d98f069](https://github.com/vue-modeler/model/commit/d98f0690a049ca71d1d79ed48d1f6a327648c616))
-* **createModel:** remove export of create-model ([c263002](https://github.com/vue-modeler/model/commit/c263002d51ae38e77a0173d95b4ac04e4dfa919e))
+* **createModel:** removed from public module API ([c263002](https://github.com/vue-modeler/model/commit/c263002d51ae38e77a0173d95b4ac04e4dfa919e))
 * **decorator:** update TypeScript configuration and action decorator ([5dceb0c](https://github.com/vue-modeler/model/commit/5dceb0c53acb87fced831ecbd5ead191bb9c90f1))
 
 
@@ -24,10 +22,10 @@
 
 ### BREAKING CHANGES
 
-* **createModel:** -  createModel function removed from public module API
-* - the factory function `model` has been removed
-- the model instance is not automatically placed in the dependency container. You must put the model instance into the container yourself when configuring dependencies.
-- dependency on vue-modeler/dc has been removed
+* createModel function removed from public module API
+* the factory function `model` has been removed
+* the model instance is not automatically placed in the dependency container. You must put the model instance into the container yourself when configuring dependencies.
+* dependency on vue-modeler/dc has been removed
 * **decorator:** used new syntax for `action` decorator based on Decorator Proposal for TC39. It is not compatible with TypeScript experimental decorator. New syntax working only with TypeScript >= 5.0. see https://devblogs.microsoft.com/typescript/announcing-typescript-5-0/#decorators
 
 # [1.1.0-beta.1](https://github.com/vue-modeler/model/compare/v1.0.7-beta.6...v1.1.0-beta.1) (2025-09-10)
@@ -58,23 +56,6 @@
 * the factory function `model` has been removed
 * the model instance is not automatically placed in the dependency container. You must put the model instance into the container yourself when configuring dependencies.
 * dependency on vue-modeler/dc has been removed
-
-
-## [1.0.7-beta.5](https://github.com/vue-modeler/model/compare/v1.0.7-beta.4...v1.0.7-beta.5) (2025-08-19)
-
-
-### Bug Fixes
-
-* **tests:** update action decorator tests for promise handling ([367ed0f](https://github.com/vue-modeler/model/commit/367ed0fa2fbac2c6ae9d5ea76038dc474337b13a))
-
-
-### Code Refactoring
-
-* **decorator:** update TypeScript configuration and action decorator ([5dceb0c](https://github.com/vue-modeler/model/commit/5dceb0c53acb87fced831ecbd5ead191bb9c90f1))
-
-
-### BREAKING CHANGES
-
 * **decorator:** used new syntax for `action` decorator based on Decorator Proposal for TC39. It is not compatible with TypeScript experimental decorator. New syntax working only with TypeScript >= 5.0. see https://devblogs.microsoft.com/typescript/announcing-typescript-5-0/#decorators
 
 ## [1.0.7-beta.4](https://github.com/vue-modeler/model/compare/v1.0.7-beta.3...v1.0.7-beta.4) (2025-08-15)
