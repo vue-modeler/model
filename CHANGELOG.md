@@ -1,3 +1,9 @@
+## [2.0.1](https://github.com/vue-modeler/model/compare/v2.0.0...v2.0.1) (2025-09-14)
+
+### Bug Fixes
+
+* **CHANGELOG:** clean up and update changelog formatting, removing outdated sections and ensuring clarity ([65850db](https://github.com/vue-modeler/model/commit/65850db587e1e34f4981f313ff239496c56a2f29))
+
 ## [2.0.1-beta.1](https://github.com/vue-modeler/model/compare/v2.0.0...v2.0.1-beta.1) (2025-09-14)
 
 ### Bug Fixes
