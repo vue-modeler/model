@@ -22,6 +22,7 @@ export abstract class ProtoModel {
   // watchers are stored in a set to avoid memory leaks
   protected _watchStopHandlers = new Set<ReturnType<typeof watch>>()
 
+  protected static createModel = createModel
   /**
    * Creates a model instance.
    * 
@@ -39,7 +40,7 @@ export abstract class ProtoModel {
 
     const protoModel = new this(...args)
 
-    return createModel(protoModel)
+    return ProtoModel.createModel(protoModel)
   }
   
   get hasPendingActions (): boolean {
