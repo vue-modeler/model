@@ -1,3 +1,13 @@
+## [2.1.0-beta.1](https://github.com/vue-modeler/model/compare/v2.0.1...v2.1.0-beta.1) (2025-09-22)
+
+### Features
+
+* **proto-model:** the CreateModel function has been added to the ProtoModel class as a protected static method. ([b6ace3b](https://github.com/vue-modeler/model/commit/b6ace3bdb0582b16a28b9c7c9eda9316d10df0a2))
+
+### Bug Fixes
+
+* **proto-model:** update watchStopHandler return function to ensure proper cleanup of handlers ([461528f](https://github.com/vue-modeler/model/commit/461528f87e3f475c887b0cfeda24e3e790895886))
+
 ## [2.0.1](https://github.com/vue-modeler/model/compare/v2.0.0...v2.0.1) (2025-09-14)
 
 ### Bug Fixes
