@@ -126,7 +126,10 @@ export abstract class ProtoModel {
 
     this._watchStopHandlers.add(watchStopHandler)
 
-    return watchStopHandler
+    return () => {
+      watchStopHandler()
+      this._watchStopHandlers.delete(watchStopHandler)  
+    }
   }
 
   protected computed<T> (getter: ComputedGetter<T>, debugOptions?: DebuggerOptions): ComputedRef<T> {
@@ -139,13 +142,13 @@ export abstract class ProtoModel {
   protected updateBit (number: number, bitPosition: number, bitValue: boolean): number {
     // Normalized bit value.
     const bitValueNormalized = bitValue
-    ? 1
-    : 0
+      ? 1
+      : 0
 
-  const clearMask = ~(1 << bitPosition)
+    const clearMask = ~(1 << bitPosition)
 
-  return (number & clearMask) | (bitValueNormalized << bitPosition)
-}
+    return (number & clearMask) | (bitValueNormalized << bitPosition)
+  }
 
 
   protected createAction (actionFunction: OriginalMethodWrapper): ShallowReactive<ActionPublic> {
