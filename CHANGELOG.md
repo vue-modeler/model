@@ -1,3 +1,9 @@
+## [2.1.1-beta.1](https://github.com/vue-modeler/model/compare/v2.1.0...v2.1.1-beta.1) (2025-09-22)
+
+### Bug Fixes
+
+* **proto-model:** update watchStopHandler return function to ensure proper cleanup of handlers ([461528f](https://github.com/vue-modeler/model/commit/461528f87e3f475c887b0cfeda24e3e790895886))
+
 ## [2.1.0](https://github.com/vue-modeler/model/compare/v2.0.1...v2.1.0) (2025-09-15)
 
 ### Features
