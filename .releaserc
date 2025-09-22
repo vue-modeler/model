@@ -9,7 +9,8 @@
             {
                 "preset": "conventionalcommits",
                 "releaseRules": [
-                    { "scope": "no-release", "release": false }
+                    { "scope": "no-release", "release": false },
+                    { "type": "*", "branch": "beta", "skip": true }
                 ],
                 "parserOpts": {
                     "noteKeywords": ["BREAKING CHANGE", "BREAKING CHANGES"]
@@ -22,7 +23,13 @@
                 "preset": "conventionalcommits"
             }
         ],
-        "@semantic-release/changelog",
+        [
+            "@semantic-release/changelog",
+            {
+                "changelogFile": "CHANGELOG.md",
+                "ignoreBranches": ["beta"]
+            }
+        ],
         "@semantic-release/npm",
         "@semantic-release/github",
         "@semantic-release/git"
