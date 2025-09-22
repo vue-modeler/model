@@ -9,8 +9,7 @@
             {
                 "preset": "conventionalcommits",
                 "releaseRules": [
-                    { "scope": "no-release", "release": false },
-                    { "type": "*", "branch": "beta", "skip": true }
+                    { "scope": "no-release", "release": false }
                 ],
                 "parserOpts": {
                     "noteKeywords": ["BREAKING CHANGE", "BREAKING CHANGES"]
