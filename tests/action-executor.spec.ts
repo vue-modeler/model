@@ -1,18 +1,59 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { isShallow, nextTick, watch } from 'vue'
 import { ActionExecutor } from '../src/action-executor'
-import { Action } from '../src/types'
+import { Action, Model } from '../src/types'
 import { createApiMock } from './test-model/create-api-mock'
 import { createTestModel } from './test-model/create-test-model'
 import { TestProtoModel } from './test-model/test-proto-model'
 
 describe('ActionExecutor', () => {
-  let executor: ActionExecutor<TestProtoModel>
+  let executor: Model<ActionExecutor<TestProtoModel>>
   let model: ReturnType<typeof createTestModel>
 
   beforeEach(() => {
     const apiMock = createApiMock()
     model = createTestModel(apiMock)
-    executor = new ActionExecutor<TestProtoModel>()
+    executor = (ActionExecutor<TestProtoModel>).model()
+  })
+
+  it('should be shallow reactive', () => {
+    expect(isShallow(executor)).toBe(true)
+  })
+
+  it('should reactively update servedAction when init is called', async () => {
+    const action1 = model.successActionWithoutArgs
+    const action2 = model.successActionWithArgs
+    
+    const servedActions: (typeof action1 | null)[] = []
+    
+    watch(
+      () => executor.servedAction,
+      (action) => {
+        servedActions.push(action as typeof action1 | null)
+      }
+    )
+    
+    // Initial state should be null
+    expect(servedActions.length).toBe(0)
+    
+    // Initialize with first action
+    executor.init(action1)
+    await nextTick()
+    
+    expect(servedActions.length).toBe(1)
+    expect(servedActions[0]).toBe(action1)
+    
+    // Initialize with second action
+    executor.init(action2, 1, 'test', {})
+    await nextTick()
+    expect(servedActions.length).toBe(2)
+    expect(servedActions[1]).toBe(action2)
+    
+    // Reset should clear servedAction
+    executor.reset()
+    await nextTick()
+    expect(servedActions.length).toBe(3)
+    expect(servedActions[2]).toBeNull()
   })
 
   describe('init and getters', () => {
@@ -88,17 +129,18 @@ describe('ActionExecutor', () => {
       await expect(executor.exec()).rejects.toThrow('Action not initialized')
     })
 
-    it('should execute served action with provided args', async () => {
+    it('should execute served action with provided args and return true on success', async () => {
       const action = model.successActionWithArgs
       const execSpy = vi.spyOn(action, 'exec')
       
       executor.init(action, 42, 'test', { key: 'value' })
-      await executor.exec()
+      const result = await executor.exec()
       
       expect(execSpy).toHaveBeenCalledWith(42, 'test', { key: 'value' })
+      expect(result).toBe(true)
     })
 
-    it('should clear getters after successful execution', async () => {
+    it('should clear getters after successful execution and return true', async () => {
       const action = model.successActionWithArgs
       
       executor.init(action, 1, 'test', {})
@@ -106,14 +148,15 @@ describe('ActionExecutor', () => {
       expect(executor.args).toEqual([1, 'test', {}])
       expect(executor.error).toBeNull()
       
-      await executor.exec()
+      const result = await executor.exec()
       
+      expect(result).toBe(true)
       expect(executor.servedAction).toBeNull()
       expect(executor.args).toBeNull()
       expect(executor.error).toBeNull()
     })
 
-    it('should save error and not clear getters if action has error', async () => {
+    it('should save error, not clear getters and return false if action has error', async () => {
       const action = model.singleErrorAction
       
       executor.init(action)
@@ -122,8 +165,9 @@ describe('ActionExecutor', () => {
       expect(executor.error).toBeNull()
       
       // Execute action to get it into error state
-      await executor.exec()
+      const result = await executor.exec()
       
+      expect(result).toBe(false)
       expect(executor.servedAction).toBe(action)
       expect(executor.args).toEqual([])
       expect(executor.error).toEqual(action.error)
@@ -139,12 +183,14 @@ describe('ActionExecutor', () => {
       
       // First action
       executor.init(action1)
-      await executor.exec()
+      const result1 = await executor.exec()
+      expect(result1).toBe(true)
       expect(execSpy1).toHaveBeenCalled()
       
       // Second action
       executor.init(action2, 1, 'test', {})
-      await executor.exec()
+      const result2 = await executor.exec()
+      expect(result2).toBe(true)
       expect(execSpy2).toHaveBeenCalledWith(1, 'test', {})
     })
 
@@ -154,10 +200,12 @@ describe('ActionExecutor', () => {
       
       // First action - execute with error
       executor.init(actionWithError)
-      await executor.exec()
+      const result1 = await executor.exec()
+      expect(result1).toBe(false)
       
       executor.init(actionWithoutError)
-      await executor.exec()
+      const result2 = await executor.exec()
+      expect(result2).toBe(true)
     })
   })
 })

@@ -26,7 +26,7 @@ export class ActionExecutor<Model extends ProtoModel> extends ProtoModel {
     return this._error
   }
 
-  async exec(): Promise<void> {
+  async exec(): Promise<boolean> {
     if (!this._servedAction || !this._args) {
       throw new Error('Action not initialized')
     }
@@ -36,10 +36,12 @@ export class ActionExecutor<Model extends ProtoModel> extends ProtoModel {
     if (this._servedAction.error) {
       this._error = this._servedAction.error
       
-      return
+      return false
     }
 
     this.reset()
+
+    return true
   }
 
   reset(): void {
