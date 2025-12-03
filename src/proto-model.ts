@@ -1,7 +1,7 @@
 import { computed, ComputedGetter, ComputedRef, DebuggerOptions, effectScope, Ref, ref, ShallowReactive, shallowReactive, watch, watchEffect, WatchStopHandle } from 'vue'
 
-import { Action } from './action'
-import { ActionPublic, ActionStateName, Model, OriginalMethod, OriginalMethodWrapper } from './types'
+import { ActionInner } from './action'
+import { Action, ActionStateName, Model, OriginalMethod, OriginalMethodWrapper } from './types'
 import { ActionInternalError } from './error'
 import { createModel } from './create-model'
 
@@ -13,8 +13,8 @@ export abstract class ProtoModel {
   protected _effectScope = effectScope(true)
 
   // we use WeakMap to store actions as keys to avoid memory leaks
-  protected _actions = new WeakMap<OriginalMethodWrapper, ShallowReactive<ActionPublic>>()
-  protected _actionIds = new WeakMap<ShallowReactive<ActionPublic>, number>()
+  protected _actions = new WeakMap<OriginalMethodWrapper, ShallowReactive<Action<this>>>()
+  protected _actionIds = new WeakMap<ShallowReactive<Action<this>>, number>()
   protected _actionStates = new Map<ActionStateName, Ref<number>>()
   // WeakMap doesn't have a size property, so we need to store the size of the map
   protected _actionsSize = 0
@@ -44,11 +44,11 @@ export abstract class ProtoModel {
   }
   
   get hasPendingActions (): boolean {
-    return !!this.getActionStatesRef(Action.possibleState.pending).value
+    return !!this.getActionStatesRef(ActionInner.possibleState.pending).value
   }
 
   get hasActionWithError (): boolean {
-    return !!this.getActionStatesRef(Action.possibleState.error).value
+    return !!this.getActionStatesRef(ActionInner.possibleState.error).value
   }
 
   /**
@@ -151,8 +151,8 @@ export abstract class ProtoModel {
   }
 
 
-  protected createAction (actionFunction: OriginalMethodWrapper): ShallowReactive<ActionPublic> {
-    const action = shallowReactive(new Action(this, actionFunction))
+  protected createAction (actionFunction: OriginalMethodWrapper): ShallowReactive<Action<this>> {
+    const action = shallowReactive(new ActionInner(this, actionFunction))
 
     this._actions.set(actionFunction, action)
     this._actionIds.set(action, ++this._actionsSize)
@@ -213,9 +213,9 @@ export abstract class ProtoModel {
    * @param originalMethod - defined as OriginalMethod or OriginalMethodWrapper.
    * @returns action
   */
-  protected action (originalMethod: OriginalMethod | OriginalMethodWrapper): ShallowReactive<ActionPublic> {
-    const isActionDecoratorApplied = Action.actionFlag in originalMethod
-      && typeof originalMethod[Action.actionFlag] === 'function'
+  protected action (originalMethod: OriginalMethod | OriginalMethodWrapper): ShallowReactive<Action<this>> {
+    const isActionDecoratorApplied = ActionInner.actionFlag in originalMethod
+      && typeof originalMethod[ActionInner.actionFlag] === 'function'
 
     if (!isActionDecoratorApplied) {
       throw new ActionInternalError('Action decorator is not applied to the method')
@@ -230,7 +230,7 @@ export abstract class ProtoModel {
    * 
    * @see type Model<T>
    */
-  setActionState(action: Action): void {
+  setActionState(action: ActionInner<this>): void {
     const actionId = this._actionIds.get(action)
 
     if (!actionId) {

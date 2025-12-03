@@ -1,7 +1,7 @@
 import { ShallowReactive } from 'vue'
 
 import { action } from '../../src/decorator'
-import { ActionPublic } from '../../src/types'
+import { Action } from '../../src/types'
 import { ParentProtoModel } from './parent-proto-model'
 
 export interface ApiService {
@@ -193,13 +193,13 @@ export class TestProtoModel extends ParentProtoModel {
    * But inside normal method you can take a Action as object to get it state.
    * Use for it  this.action(this.someAction)
    */
-  normalSyncMethodWithActionInside (): ShallowReactive<ActionPublic> {
+  normalSyncMethodWithActionInside (): ShallowReactive<Action<this>> {
     // eslint-disable-next-line @typescript-eslint/unbound-method
     return this.action(this.nestedActionA)
   }
   
   
-  tryGetActionByMethod (): ShallowReactive<ActionPublic> {
+  tryGetActionByMethod (): ShallowReactive<Action<this>> {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     return this.action(this.normalSyncMethodWithError.bind(this))
