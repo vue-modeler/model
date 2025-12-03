@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test } from 'vitest'
-import { Action } from '../src/action'
+import { ActionInner } from '../src/action'
 import { ActionInternalError } from '../src/error/action-internal-error'
 import { OriginalMethodWrapper } from '../src/types'
 import { TestProtoModel } from './test-model/test-proto-model'
@@ -16,16 +16,16 @@ describe('Action constructor', () => {
 
   test('successfully creates action outside a model, but the action will throw error in run time', () => {
     // eslint-disable-next-line @typescript-eslint/unbound-method
-    const action = new Action(protoModel, protoModel.successActionWithoutArgs as OriginalMethodWrapper<[]>) 
+    const action = new ActionInner(protoModel, protoModel.successActionWithoutArgs as OriginalMethodWrapper<[]>) 
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
     expect(() => { action.exec() }).toThrow(new Error('Action not found'))
   })
 
   test('creates new instance for decorated action method with default state', () => {
     // eslint-disable-next-line @typescript-eslint/unbound-method
-    const action = new Action(protoModel, protoModel.successActionWithoutArgs as OriginalMethodWrapper<[]>)
+    const action = new ActionInner(protoModel, protoModel.successActionWithoutArgs as OriginalMethodWrapper<[]>)
 
-    expect(action.state).toBe(Action.possibleState.ready)
+    expect(action.state).toBe(ActionInner.possibleState.ready)
     expect(action.toString()).toBe('successActionWithoutArgs')
     expect(action.name).toBe('successActionWithoutArgs')
     expect(action.isReady).toBe(true)
@@ -44,7 +44,7 @@ describe('Action constructor', () => {
     expect.assertions(2)
     try {
       // eslint-disable-next-line @typescript-eslint/unbound-method
-      new Action(protoModel, protoModel.normalSyncMethodWithData as never as OriginalMethodWrapper<[]>)
+      new ActionInner(protoModel, protoModel.normalSyncMethodWithData as never as OriginalMethodWrapper<[]>)
     } catch (error) {
       expect(error).toBeInstanceOf(ActionInternalError)
       expect((error as ActionInternalError).message).toBe('Method normalSyncMethodWithData is not action')
@@ -59,7 +59,7 @@ describe('Action constructor', () => {
     expect.assertions(2)
     try {
        
-      new Action(protoModel, someFunction as never as OriginalMethodWrapper<[]>)
+      new ActionInner(protoModel, someFunction as never as OriginalMethodWrapper<[]>)
     } catch (error) {
       expect(error).toBeInstanceOf(ActionInternalError)
       expect((error as ActionInternalError).message).toBe('Model does not contain method someFunction')

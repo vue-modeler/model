@@ -1,6 +1,6 @@
 
 import { shallowReactive } from 'vue'
-import { Action } from './action'
+import { ActionInner } from './action'
 import { ProtoModel } from './proto-model'
 import { Model, ModelAdapterProxyConstructor, OriginalMethodWrapper } from './types'
 
@@ -47,8 +47,8 @@ export function createModel<Target extends ProtoModel> (
 
         const targetPropertyIsFunction = typeof targetProperty === 'function'
         const isActionDecoratorApplied =  targetPropertyIsFunction
-          && Action.actionFlag in targetProperty
-          && typeof targetProperty[Action.actionFlag] === 'function'
+          && ActionInner.actionFlag in targetProperty
+          && typeof targetProperty[ActionInner.actionFlag] === 'function'
 
         if (isActionDecoratorApplied) {
           // eslint-disable-next-line @typescript-eslint/ban-ts-comment

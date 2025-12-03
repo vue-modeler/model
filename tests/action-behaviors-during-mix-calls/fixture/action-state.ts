@@ -1,10 +1,10 @@
-import { Action } from '../../../src/action'
+import { ActionInner } from '../../../src/action'
 
-const pending = Action.possibleState.pending
-const error = Action.possibleState.error
-const ready = Action.possibleState.ready
-const lock = Action.possibleState.lock
-const abort = Action.possibleState.abort
+const pending = ActionInner.possibleState.pending
+const error = ActionInner.possibleState.error
+const ready = ActionInner.possibleState.ready
+const lock = ActionInner.possibleState.lock
+const abort = ActionInner.possibleState.abort
 
 export const singleSuccessAction = [
   { state: pending },

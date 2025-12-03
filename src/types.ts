@@ -1,21 +1,23 @@
-import { Action } from './action'
+import { ActionInner } from './action'
 import { ProtoModel } from './proto-model'
 
-export type ActionPublic = Omit<Action, 'call'>
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type Action<Model extends ProtoModel, Args extends any[] = unknown[]> = Omit<ActionInner<Model, Args>, 'call'>
 export type OriginalMethod = (...args: any[]) => Promise<void>
 
-export interface OriginalMethodWrapper<Args extends unknown[] = unknown[]> {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export interface OriginalMethodWrapper<Args extends any[] = unknown[]> {
   (...args: Args): Promise<void>
-  [Action.actionFlag]: OriginalMethod
+  [ActionInner.actionFlag]: OriginalMethod
 }
 
-export type ActionStateName = keyof typeof Action.possibleState
+export type ActionStateName = keyof typeof ActionInner.possibleState
 
 export type ProtectedMethodInModel = 'action' | 'setActionState'
 export type Model<T> = {
   [K in keyof T]:
     T[K] extends ((...args: infer Args) => Promise<void>)
-      ? Action<Args>
+      ? Action<T extends ProtoModel ? T : never, Args>
       : K extends ProtectedMethodInModel
         ? never
         : T[K]

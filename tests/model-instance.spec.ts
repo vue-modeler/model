@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { isShallow } from 'vue'
-import { Action } from '../src/action'
+import { ActionInner } from '../src/action'
 import { action } from '../src/decorator/action'
 import { ProtoModel } from '../src/proto-model'
 import { Model } from '../src/types'
@@ -54,7 +54,7 @@ describe('Model', () => {
 
     const action = model.actionMethod
     expect(action).toBeDefined()
-    expect(action).toBeInstanceOf(Action)
+    expect(action).toBeInstanceOf(ActionInner)
     expect(isShallow(action)).toBeTruthy()
   })
 
