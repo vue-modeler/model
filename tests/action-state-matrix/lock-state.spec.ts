@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { ActionPublic, Model } from '../../src/types'
+import { Model } from '../../src/types'
 import { createApiMock } from '../test-model/create-api-mock'
 import { createTestModel } from '../test-model/create-test-model'
 import { TestProtoModel } from '../test-model/test-proto-model'
@@ -17,21 +17,21 @@ describe('Action in LOCK state', () => {
 
   it('goes to READY state after unlock', () => {
     model.singleErrorAction.unlock()
-    validateReadyState(model.singleErrorAction as ActionPublic)
+    validateReadyState(model.singleErrorAction)
   })
 
   it('throws error after trying to call exec', () => {
     expect(() => model.singleErrorAction.exec()).toThrow('Trying to update state of singleErrorAction from lock to pending')
-    validateLockState(model.singleErrorAction as ActionPublic)
+    validateLockState(model.singleErrorAction)
   })
 
   it('does not change state after trying abort', async () => {
     await expect(model.singleErrorAction.abort()).resolves.toBeUndefined()
-    validateLockState(model.singleErrorAction as ActionPublic)
+    validateLockState(model.singleErrorAction)
   })
 
   it('throws error when trying to call resetError', () => {
     expect(() => model.singleErrorAction.resetError()).toThrow('Trying to update state of singleErrorAction from lock to ready')
-    validateLockState(model.singleErrorAction as ActionPublic)
+    validateLockState(model.singleErrorAction)
   })
 })

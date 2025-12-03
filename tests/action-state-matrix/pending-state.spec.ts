@@ -1,13 +1,13 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { ActionError } from '../../src/error/action-error'
-import { ActionPublic, Model } from '../../src/types'
+import { ActionInternalError } from '../../src/error/action-internal-error'
+import { ActionStatusConflictError } from '../../src/error/action-status-conflict-error'
+import { ActionUnexpectedAbortError } from '../../src/error/action-unexpected-abort-error'
+import { Model } from '../../src/types'
 import { createApiMock } from '../test-model/create-api-mock'
 import { createTestModel } from '../test-model/create-test-model'
 import { TestProtoModel } from '../test-model/test-proto-model'
 import { validateAbortState, validateErrorState, validateLockState, validatePendingState, validateReadyState } from './state-validator/state-validator'
-import { ActionInternalError } from '../../src/error/action-internal-error'
-import { ActionUnexpectedAbortError } from '../../src/error/action-unexpected-abort-error'
-import { ActionStatusConflictError } from '../../src/error/action-status-conflict-error'
 
 describe('Action in PENDING state', () => {
   let model: Model<TestProtoModel>
@@ -38,26 +38,26 @@ describe('Action in PENDING state', () => {
     // We use model.nestedWithAbort because it emulate abort by signal.
      
     const actionPromise = model.actionWithAbort.exec()
-    validatePendingState(model.actionWithAbort as ActionPublic, [], actionPromise)
+    validatePendingState(model.actionWithAbort, [], actionPromise)
     const lockPromise = model.actionWithAbort.lock()
 
     expect(Object.is(actionPromise, lockPromise)).toBeTruthy()
     await actionPromise
 
-    validateLockState(model.actionWithAbort as ActionPublic)
+    validateLockState(model.actionWithAbort)
   })
 
   it('goes to ABORT state after abort from external execution context', async () => {
      
     const promise = model.actionWithAbort.exec()
-    validatePendingState(model.actionWithAbort as ActionPublic, [], promise)
+    validatePendingState(model.actionWithAbort, [], promise)
     const abortedPromise = model.actionWithAbort.abort('Abort reason')
 
     expect(Object.is(promise, abortedPromise)).toBeTruthy()
 
     await abortedPromise
 
-    validateAbortState(model.actionWithAbort as ActionPublic, 'Abort reason')
+    validateAbortState(model.actionWithAbort, 'Abort reason')
   })
 
   it('throws error after trying parallel call of exec', async () => {
@@ -65,29 +65,29 @@ describe('Action in PENDING state', () => {
     const promise = model.successActionWithoutArgs.exec()
     expect(() => model.successActionWithoutArgs.exec()).toThrow('Trying to update state of successActionWithoutArgs from pending to pending')
     await promise
-    validateReadyState(model.successActionWithoutArgs as ActionPublic)
+    validateReadyState(model.successActionWithoutArgs)
   })
 
   it('throws error after trying unlock', async () => {
     const promise = model.successActionWithoutArgs.exec()
     expect(() => model.successActionWithoutArgs.unlock()).toThrow('Trying to update state of successActionWithoutArgs from pending to ready')
-    validatePendingState(model.successActionWithoutArgs as ActionPublic, [], promise)
+    validatePendingState(model.successActionWithoutArgs, [], promise)
     await promise
-    validateReadyState(model.successActionWithoutArgs as ActionPublic)
+    validateReadyState(model.successActionWithoutArgs)
   })
 
   it('throws error when trying to call resetError', async () => {
     const promise = model.successActionWithoutArgs.exec()
     expect(() => model.successActionWithoutArgs.resetError()).toThrow('Trying to update state of successActionWithoutArgs from pending to ready')
-    validatePendingState(model.successActionWithoutArgs as ActionPublic, [], promise)
+    validatePendingState(model.successActionWithoutArgs, [], promise)
     await promise
-    validateReadyState(model.successActionWithoutArgs as ActionPublic)
+    validateReadyState(model.successActionWithoutArgs)
   })
 
   it('throws error if it is an ActionInternalError', async () => {
     const promise = model.actionWithCustomError.exec(new ActionInternalError('message'))
     validatePendingState(
-      model.actionWithCustomError as ActionPublic,
+      model.actionWithCustomError,
       [new ActionInternalError('message')],
       promise
     )
@@ -98,7 +98,7 @@ describe('Action in PENDING state', () => {
   it('throws error if it is an RangeError', async () => {
     const promise = model.actionWithCustomError.exec(new RangeError('message'))
     validatePendingState(
-      model.actionWithCustomError as ActionPublic,
+      model.actionWithCustomError,
       [new RangeError('message')],
       promise
     )
@@ -109,7 +109,7 @@ describe('Action in PENDING state', () => {
   it('throws error if it is an ReferenceError', async () => {
     const promise = model.actionWithCustomError.exec(new ReferenceError('message'))
     validatePendingState(
-      model.actionWithCustomError as ActionPublic,
+      model.actionWithCustomError,
       [new ReferenceError('message')],
       promise
     )
@@ -120,7 +120,7 @@ describe('Action in PENDING state', () => {
   it('throws error if it is an SyntaxError', async () => {
     const promise = model.actionWithCustomError.exec(new SyntaxError('message'))
     validatePendingState(
-      model.actionWithCustomError as ActionPublic,
+      model.actionWithCustomError,
       [new SyntaxError('message')],
       promise
     )
@@ -131,7 +131,7 @@ describe('Action in PENDING state', () => {
   it('throws error if it is an TypeError', async () => {
     const promise = model.actionWithCustomError.exec(new TypeError('message'))
     validatePendingState(
-      model.actionWithCustomError as ActionPublic,
+      model.actionWithCustomError,
       [new TypeError('message')],
       promise
     )
@@ -142,7 +142,7 @@ describe('Action in PENDING state', () => {
   it('throws error if it is an URIError', async () => {
     const promise = model.actionWithCustomError.exec(new URIError('message'))
     validatePendingState(
-      model.actionWithCustomError as ActionPublic,
+      model.actionWithCustomError,
       [new URIError('message')],
       promise
     )
@@ -153,7 +153,7 @@ describe('Action in PENDING state', () => {
   it('throws error if it is an EvalError', async () => {
     const promise = model.actionWithCustomError.exec(new EvalError('message'))
     validatePendingState(
-      model.actionWithCustomError as ActionPublic,
+      model.actionWithCustomError,
       [new EvalError('message')],
       promise
     )

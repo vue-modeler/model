@@ -3,7 +3,7 @@ import { ActionInternalError } from './error/action-internal-error'
 import { ActionStatusConflictError } from './error/action-status-conflict-error'
 import { ActionUnexpectedAbortError } from './error/action-unexpected-abort-error'
 import { ProtoModel } from './proto-model'
-import { ActionStateName, OriginalMethodWrapper } from './types'
+import { Action, ActionStateName, Model, OriginalMethodWrapper } from './types'
 
 const isAbortError = (originalError: unknown): boolean => (originalError instanceof DOMException
   && originalError.name === 'AbortError')
@@ -16,8 +16,14 @@ interface ActionPendingValue {
 
 type ActionValue = ActionPendingValue | ActionError | null
 
+/**
+ * We should to use here `<T extends ProtoModel>` because 
+ * we need some methods from `ProtoModel` class which are protected in context of `Model<T>`.
+ * For example, `setActionState` method.
+ * @see `ProtoModel.setActionState`
+ */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export class ActionInner<Model extends ProtoModel, Args extends any[] = unknown[]> {
+export class ActionInner<T extends ProtoModel, Args extends any[] = unknown[]> {
   static readonly actionFlag = Symbol('__action_original_method__')
   static readonly possibleState = {
     pending: 'pending',
@@ -35,13 +41,13 @@ export class ActionInner<Model extends ProtoModel, Args extends any[] = unknown[
   protected _args: Args | null = null
 
   constructor (
-    protected _model: Model, // TODO: thing about this arg, it may be potential problem
+    protected _model: T, // TODO: thing about this arg, it may be potential problem
     protected actionFunction: OriginalMethodWrapper<Args>,
   ) {
     const name = actionFunction.name
 
     const isModelMethod = name in this._model 
-      && typeof this._model[name as keyof Model] === 'function'
+      && typeof this._model[name as keyof T] === 'function'
     
       if (!isModelMethod) {
       throw new ActionInternalError(`Model does not contain method ${name}`)
@@ -58,8 +64,8 @@ export class ActionInner<Model extends ProtoModel, Args extends any[] = unknown[
     return this.name
   }
 
-  get model (): Model {
-    return this._model
+  get owner (): Model<T> {
+    return this._model as Model<T>
   }
 
   get possibleStates (): ActionStateName[] {
@@ -73,7 +79,8 @@ export class ActionInner<Model extends ProtoModel, Args extends any[] = unknown[
   protected set state (newState: ActionStateName) {
     this._state = newState
 
-    this._model.setActionState(this as unknown as ActionInner<Model>)
+    // Args of action are not important for setActionState method
+    this._model.setActionState(this as unknown as Action<T>)
   }
 
   get abortController (): null | AbortController {
@@ -166,7 +173,7 @@ export class ActionInner<Model extends ProtoModel, Args extends any[] = unknown[
     this._args = args
 
     const originalMethod = this.actionFunction[ActionInner.actionFlag]
-    const result = originalMethod.apply(this.model, newArgs)
+    const result = originalMethod.apply(this.owner, newArgs)
 
     // Result can be not a promise.
     // But exec must return promise.

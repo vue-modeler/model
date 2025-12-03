@@ -230,7 +230,7 @@ export abstract class ProtoModel {
    * 
    * @see type Model<T>
    */
-  setActionState(action: ActionInner<this>): void {
+  setActionState(action: Action<this>): void {
     const actionId = this._actionIds.get(action)
 
     if (!actionId) {
