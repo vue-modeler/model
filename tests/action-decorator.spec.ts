@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi, Mock } from 'vitest'
 import { action } from '../src/decorator/action'
 import { ProtoModel } from '../src/proto-model'
-import { Action } from '../src/action'
+import { ActionInner } from '../src/action'
 import { ActionPublic, OriginalMethodWrapper } from '../src/types'
 
 
@@ -67,9 +67,9 @@ describe('Action decorator', () => {
 
     expect(typeof wrapper).toBe('function')
     expect(wrapper).not.toBe(originalMethod)
-    expect(wrapper[Action.actionFlag]).toBeDefined() 
-    expect(wrapper[Action.actionFlag]).toBe(originalMethod) 
-    expect(typeof wrapper[Action.actionFlag]).toBe('function')
+    expect(wrapper[ActionInner.actionFlag]).toBeDefined() 
+    expect(wrapper[ActionInner.actionFlag]).toBe(originalMethod) 
+    expect(typeof wrapper[ActionInner.actionFlag]).toBe('function')
   })
 
   it('throws error if method is static', () => {  
@@ -112,7 +112,7 @@ describe('Action decorator', () => {
 
     // Should still work even with symbol names
     expect(wrapper.name).toBe(symbolName.toString())
-    expect(wrapper[Action.actionFlag]).toBe(originalMethod)
+    expect(wrapper[ActionInner.actionFlag]).toBe(originalMethod)
   })
 })
 
@@ -130,8 +130,8 @@ describe('Original method wrapper', () => {
       exec: vi.fn(),
       is: vi.fn(),
       name: 'testAction',
-      state: Action.possibleState.ready,
-      possibleStates: Object.values(Action.possibleState),
+      state: ActionInner.possibleState.ready,
+      possibleStates: Object.values(ActionInner.possibleState),
       abortController: null,
       promise: null,
       error: null,
@@ -173,7 +173,7 @@ describe('Original method wrapper', () => {
     expect(actionProtectedMethodMock).toHaveBeenCalled()
     const actionCallArg = actionProtectedMethodMock.mock.calls[0][0] as OriginalMethodWrapper<[number, string]>
     expect(actionCallArg).toBe(wrapper)
-    expect(actionCallArg[Action.actionFlag]).toBe(originalMethod)
+    expect(actionCallArg[ActionInner.actionFlag]).toBe(originalMethod)
     
     expect(actionMock.exec).toHaveBeenCalled()
     expect((actionMock.exec as Mock).mock.calls[0][0]).toBe(1)

@@ -17,7 +17,7 @@ interface ActionPendingValue {
 type ActionValue = ActionPendingValue | ActionError | null
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export class Action<Args extends any[] = unknown[]> {
+export class ActionInner<Model extends ProtoModel, Args extends any[] = unknown[]> {
   static readonly actionFlag = Symbol('__action_original_method__')
   static readonly possibleState = {
     pending: 'pending',
@@ -30,22 +30,24 @@ export class Action<Args extends any[] = unknown[]> {
   static abortedByLock = Symbol('lock')
 
   readonly name: string
-  protected _state: ActionStateName = Action.possibleState.ready
+  protected _state: ActionStateName = ActionInner.possibleState.ready
   protected _value: ActionValue = null
   protected _args: Args | null = null
 
   constructor (
-    protected model: ProtoModel, // TODO: thing about this arg, it may be potential problem
+    protected _model: Model, // TODO: thing about this arg, it may be potential problem
     protected actionFunction: OriginalMethodWrapper<Args>,
   ) {
     const name = actionFunction.name
 
-    const isModelMethod = name in model && typeof (model as unknown as Record<string, unknown>)[name] === 'function'
-    if (!isModelMethod) {
+    const isModelMethod = name in this._model 
+      && typeof this._model[name as keyof Model] === 'function'
+    
+      if (!isModelMethod) {
       throw new ActionInternalError(`Model does not contain method ${name}`)
     }
 
-    if (typeof actionFunction[Action.actionFlag] !== 'function') {
+    if (typeof actionFunction[ActionInner.actionFlag] !== 'function') {
       throw new ActionInternalError(`Method ${name} is not action`)
     }
 
@@ -56,8 +58,12 @@ export class Action<Args extends any[] = unknown[]> {
     return this.name
   }
 
+  get model (): Model {
+    return this._model
+  }
+
   get possibleStates (): ActionStateName[] {
-    return Object.values(Action.possibleState)
+    return Object.values(ActionInner.possibleState)
   }
 
   get state (): ActionStateName {
@@ -67,7 +73,7 @@ export class Action<Args extends any[] = unknown[]> {
   protected set state (newState: ActionStateName) {
     this._state = newState
 
-    this.model.setActionState(this as never as Action)
+    this._model.setActionState(this as unknown as ActionInner<Model>)
   }
 
   get abortController (): null | AbortController {
@@ -108,23 +114,23 @@ export class Action<Args extends any[] = unknown[]> {
   }
 
   get isPending (): boolean {
-    return this.state === Action.possibleState.pending
+    return this.state === ActionInner.possibleState.pending
   }
 
   get isError (): boolean {
-    return this.state === Action.possibleState.error
+    return this.state === ActionInner.possibleState.error
   }
 
   get isReady (): boolean {
-    return this.state === Action.possibleState.ready
+    return this.state === ActionInner.possibleState.ready
   }
 
   get isLock (): boolean {
-    return this.state === Action.possibleState.lock
+    return this.state === ActionInner.possibleState.lock
   }
 
   get isAbort (): boolean {
-    return this.state === Action.possibleState.abort
+    return this.state === ActionInner.possibleState.abort
   }
 
   is (...args: ActionStateName[]): boolean {
@@ -135,11 +141,11 @@ export class Action<Args extends any[] = unknown[]> {
    * Put into action in PENDING state  
    */
   exec (...args: Args): Promise<void> {
-    if (this.is(Action.possibleState.lock, Action.possibleState.pending)) {
+    if (this.is(ActionInner.possibleState.lock, ActionInner.possibleState.pending)) {
       throw new ActionStatusConflictError(
         this.name,
         this.state,
-        Action.possibleState.pending,
+        ActionInner.possibleState.pending,
       )
     }
 
@@ -156,17 +162,17 @@ export class Action<Args extends any[] = unknown[]> {
     // to block recursive calls.  Since the action status is already pending,
     // a recursive call will result in an action status conflict error with message:
     // "Try to change someActionName status from pending to pending"
-    this.state = Action.possibleState.pending
+    this.state = ActionInner.possibleState.pending
     this._args = args
 
-    const originalMethod = this.actionFunction[Action.actionFlag]
+    const originalMethod = this.actionFunction[ActionInner.actionFlag]
     const result = originalMethod.apply(this.model, newArgs)
 
     // Result can be not a promise.
     // But exec must return promise.
     // So we need to check it and wrap result in promise.
     if (!(result instanceof Promise)) {
-      this.state = Action.possibleState.ready
+      this.state = ActionInner.possibleState.ready
 
       return Promise.resolve()
     }
@@ -190,23 +196,23 @@ export class Action<Args extends any[] = unknown[]> {
 
         const isAbort = isAbortError(originalError)
 
-        if (isAbort && !this.is(Action.possibleState.pending, Action.possibleState.lock)) {
+        if (isAbort && !this.is(ActionInner.possibleState.pending, ActionInner.possibleState.lock)) {
           throw new ActionUnexpectedAbortError(this.name, this.state)
         }
 
         const isAbortedForLock = isAbort
           && (this._value as ActionPendingValue).abortController instanceof AbortController
-          && (this._value as ActionPendingValue).abortController.signal.reason === Action.abortedByLock
+          && (this._value as ActionPendingValue).abortController.signal.reason === ActionInner.abortedByLock
 
         if (isAbortedForLock) {
-          this.state = Action.possibleState.lock
+          this.state = ActionInner.possibleState.lock
           this._value = null
 
           return
         }
 
         if (isAbort) {
-          this.state = Action.possibleState.abort
+          this.state = ActionInner.possibleState.abort
           
           return
         }
@@ -263,10 +269,10 @@ export class Action<Args extends any[] = unknown[]> {
     
   lock (): Promise<void> {
     if (this.isPending) {
-      return this.abort(Action.abortedByLock)
+      return this.abort(ActionInner.abortedByLock)
     }
 
-    this.state = Action.possibleState.lock
+    this.state = ActionInner.possibleState.lock
     this._value = null
 
     return Promise.resolve()
@@ -277,7 +283,7 @@ export class Action<Args extends any[] = unknown[]> {
       throw new ActionStatusConflictError(
         this.name,
         this.state,
-        Action.possibleState.ready,
+        ActionInner.possibleState.ready,
       )
     }
 
@@ -289,18 +295,18 @@ export class Action<Args extends any[] = unknown[]> {
       throw new ActionStatusConflictError(
         this.name,
         this.state,
-        Action.possibleState.error,
+        ActionInner.possibleState.error,
       )
     }
 
-    this.state = Action.possibleState.error
+    this.state = ActionInner.possibleState.error
     this._value = error
 
     return this
   }
 
   protected ready (): this {
-    this.state = Action.possibleState.ready
+    this.state = ActionInner.possibleState.ready
 
     return this
   }
@@ -310,7 +316,7 @@ export class Action<Args extends any[] = unknown[]> {
       throw new ActionStatusConflictError(
         this.name,
         this.state,
-        Action.possibleState.ready,
+        ActionInner.possibleState.ready,
       )
     }
 
