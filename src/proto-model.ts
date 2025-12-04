@@ -1,26 +1,34 @@
-import { computed, ComputedGetter, ComputedRef, DebuggerOptions, effectScope, Ref, ref, ShallowReactive, shallowReactive, watch, watchEffect, WatchStopHandle } from 'vue'
+import { computed, ComputedGetter, ComputedRef, DebuggerOptions, effectScope, Ref, ref, shallowReactive, ShallowReactive, watch, watchEffect, WatchStopHandle } from 'vue'
 
 import { ActionInner } from './action'
-import { Action, ActionStateName, Model, OriginalMethod, OriginalMethodWrapper } from './types'
-import { ActionInternalError } from './error'
 import { createModel } from './create-model'
+import { ActionInternalError } from './error'
+import { Action, ActionStateName, Model, OriginalMethod, OriginalMethodWrapper } from './types'
 
 
 type ModelConstructor = new (...args: any[]) => ProtoModel
 
+const scopeKey = Symbol('scope')
+const modelKey = Symbol('model')
+const actionsKey = Symbol('actions')
+const actionIdsKey = Symbol('actionIds')
+const actionStatesKey = Symbol('actionStates')
+const actionsSizeKey = Symbol('actionsSize')
+const watchStopHandlersKey = Symbol('watchStopHandlers')
+
 export abstract class ProtoModel {
   // each model has its own effect scope to avoid memory leaks
-  protected _effectScope = effectScope(true)
-
+  protected [scopeKey] = effectScope(true)
+  protected [modelKey]: Model<this> | null = null
   // we use WeakMap to store actions as keys to avoid memory leaks
-  protected _actions = new WeakMap<OriginalMethodWrapper, ShallowReactive<Action<this>>>()
-  protected _actionIds = new WeakMap<ShallowReactive<Action<this>>, number>()
-  protected _actionStates = new Map<ActionStateName, Ref<number>>()
+  protected [actionsKey] = new WeakMap<OriginalMethodWrapper, ShallowReactive<Action<this>>>()
+  protected [actionIdsKey] = new WeakMap<ShallowReactive<Action<this>>, number>()
+  protected [actionStatesKey] = new Map<ActionStateName, Ref<number>>()
   // WeakMap doesn't have a size property, so we need to store the size of the map
-  protected _actionsSize = 0
+  protected [actionsSizeKey] = 0
 
   // watchers are stored in a set to avoid memory leaks
-  protected _watchStopHandlers = new Set<ReturnType<typeof watch>>()
+  protected [watchStopHandlersKey] = new Set<ReturnType<typeof watch>>()
 
   protected static createModel = createModel
   /**
@@ -39,8 +47,10 @@ export abstract class ProtoModel {
     }
 
     const protoModel = new this(...args)
+    const model = ProtoModel.createModel(protoModel)
 
-    return ProtoModel.createModel(protoModel)
+    protoModel[modelKey] = model
+    return model
   }
   
   get hasPendingActions (): boolean {
@@ -115,27 +125,27 @@ export abstract class ProtoModel {
     const watchStopHandler = (args.length === 1)
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore:next-line
-      ? this._effectScope.run(() => watchEffect(args[0]))
+      ? this[scopeKey].run(() => watchEffect(args[0]))
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore:next-line
-      : this._effectScope.run(() => watch(...args))
+      : this[scopeKey].run(() => watch(...args))
       
     if (!watchStopHandler) {
       throw new Error('watchStopHandler is undefined')
     }
 
-    this._watchStopHandlers.add(watchStopHandler)
+    this[watchStopHandlersKey].add(watchStopHandler)
 
     return () => {
       watchStopHandler()
-      this._watchStopHandlers.delete(watchStopHandler)  
+      this[watchStopHandlersKey].delete(watchStopHandler)  
     }
   }
 
   protected computed<T> (getter: ComputedGetter<T>, debugOptions?: DebuggerOptions): ComputedRef<T> {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore:next-line
-    return this._effectScope.run(() => computed(getter, debugOptions))
+    return this[scopeKey].run(() => computed(getter, debugOptions))
   }
 
   // @see https://github.com/trekhleb/javascript-algorithms/blob/master/src/algorithms/math/bits/updateBit.js
@@ -154,17 +164,17 @@ export abstract class ProtoModel {
   protected createAction (actionFunction: OriginalMethodWrapper): ShallowReactive<Action<this>> {
     const action = shallowReactive(new ActionInner(this, actionFunction))
 
-    this._actions.set(actionFunction, action)
-    this._actionIds.set(action, ++this._actionsSize)
+    this[actionsKey].set(actionFunction, action)
+    this[actionIdsKey].set(action, ++this[actionsSizeKey])
     this.setActionState(action)
     
     return action
   }
 
   protected getActionStatesRef(stateName: ActionStateName): Ref<number> {
-    const refToStateFlag = this._actionStates.get(stateName) || ref(0)
-    if (this._actionStates.get(stateName) === undefined) {
-      this._actionStates.set(stateName, refToStateFlag)
+    const refToStateFlag = this[actionStatesKey].get(stateName) || ref(0)
+    if (this[actionStatesKey].get(stateName) === undefined) {
+      this[actionStatesKey].set(stateName, refToStateFlag)
     }
 
     return refToStateFlag
@@ -221,7 +231,7 @@ export abstract class ProtoModel {
       throw new ActionInternalError('Action decorator is not applied to the method')
     }
 
-    return this._actions.get(originalMethod) || this.createAction(originalMethod)
+    return this[actionsKey].get(originalMethod) || this.createAction(originalMethod)
   }
 
   /**
@@ -231,7 +241,7 @@ export abstract class ProtoModel {
    * @see type Model<T>
    */
   setActionState(action: Action<this>): void {
-    const actionId = this._actionIds.get(action)
+    const actionId = this[actionIdsKey].get(action)
 
     if (!actionId) {
       throw new Error('Action not found')
@@ -253,9 +263,9 @@ export abstract class ProtoModel {
   }
 
   destructor (): void {
-    this._watchStopHandlers.forEach((stopHandler) => { stopHandler() })
-    this._watchStopHandlers = new Set()
+    this[watchStopHandlersKey].forEach((stopHandler) => { stopHandler() })
+    this[watchStopHandlersKey] = new Set()
 
-    this._effectScope.stop()
+    this[scopeKey].stop()
   }
 }
