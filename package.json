@@ -45,7 +45,7 @@
   },
   "scripts": {
     "build": "tsc && vite build",
-    "test": "vitest",
+    "test": "tsc --noEmit && vitest",
     "coverage": "vitest run --coverage",
     "semantic-release": "semantic-release"
   },
