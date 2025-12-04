@@ -6,9 +6,6 @@ import { createTestModel } from '../test-model/create-test-model'
 import { TestProtoModel } from '../test-model/test-proto-model'
 import { validateErrorState, validateLockState, validatePendingState, validateReadyState } from './state-validator/state-validator'
 
-type TestedModel = Model<TestProtoModel>
-type EmptyArgs = []
-
 describe('Action in ERROR state', () => {
   let model: Model<TestProtoModel>
 
@@ -26,10 +23,10 @@ describe('Action in ERROR state', () => {
 
   it('can go to PENDING state', async () => {
     const promise = model.singleErrorAction.exec()
-    validatePendingState<TestedModel, EmptyArgs>(model.singleErrorAction, [], promise)
+    validatePendingState(model.singleErrorAction, [], promise)
 
     await promise
-    validateErrorState<TestedModel, EmptyArgs>(
+    validateErrorState(
       model.singleErrorAction,
       new ActionError(
         model.singleErrorAction.name,
@@ -40,7 +37,7 @@ describe('Action in ERROR state', () => {
 
   it('can go to READY state', () => {
     model.singleErrorAction.resetError()
-    validateReadyState<TestedModel>(model.singleErrorAction)
+    validateReadyState(model.singleErrorAction)
   })
 
 
