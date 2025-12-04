@@ -4,6 +4,7 @@ import { ActionStatusConflictError } from './error/action-status-conflict-error'
 import { ActionUnexpectedAbortError } from './error/action-unexpected-abort-error'
 import { ProtoModel } from './proto-model'
 import { Action, ActionStateName, Model, OriginalMethodWrapper } from './types'
+import { shallowReactive } from 'vue'
 
 const isAbortError = (originalError: unknown): boolean => (originalError instanceof DOMException
   && originalError.name === 'AbortError')
@@ -43,6 +44,7 @@ export class ActionInner<T extends ProtoModel, Args extends any[] = unknown[]> {
   constructor (
     protected _model: T, // TODO: thing about this arg, it may be potential problem
     protected actionFunction: OriginalMethodWrapper<Args>,
+    protected modelGetter: () => Model<T>,
   ) {
     const name = actionFunction.name
 
@@ -60,12 +62,21 @@ export class ActionInner<T extends ProtoModel, Args extends any[] = unknown[]> {
     this.name = name
   }
 
+
+  static create<T extends ProtoModel, Args extends unknown[] = unknown[]>(
+    model: T,
+    actionFunction: OriginalMethodWrapper<Args>,
+    modelGetter: () => Model<T>
+  ): ActionInner<T, Args> {
+    return shallowReactive(new ActionInner(model, actionFunction, modelGetter))
+  }
+
   toString (): string {
     return this.name
   }
 
   get owner (): Model<T> {
-    return this._model as Model<T>
+    return this.modelGetter()
   }
 
   get possibleStates (): ActionStateName[] {
@@ -173,7 +184,7 @@ export class ActionInner<T extends ProtoModel, Args extends any[] = unknown[]> {
     this._args = args
 
     const originalMethod = this.actionFunction[ActionInner.actionFlag]
-    const result = originalMethod.apply(this.owner, newArgs)
+    const result = originalMethod.apply(this._model, newArgs)
 
     // Result can be not a promise.
     // But exec must return promise.
