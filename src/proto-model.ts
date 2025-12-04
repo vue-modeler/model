@@ -1,4 +1,4 @@
-import { computed, ComputedGetter, ComputedRef, DebuggerOptions, effectScope, Ref, ref, shallowReactive, ShallowReactive, watch, watchEffect, WatchStopHandle } from 'vue'
+import { computed, ComputedGetter, ComputedRef, DebuggerOptions, effectScope, Ref, ref, ShallowReactive, watch, watchEffect, WatchStopHandle } from 'vue'
 
 import { ActionInner } from './action'
 import { createModel } from './create-model'
@@ -162,7 +162,15 @@ export abstract class ProtoModel {
 
 
   protected createAction (actionFunction: OriginalMethodWrapper): ShallowReactive<Action<this>> {
-    const action = shallowReactive(new ActionInner(this, actionFunction))
+    const modelGetter = () => {
+      if (!this[modelKey]) {
+        throw new Error('Model not set')
+      }
+
+      return this[modelKey]
+    }
+
+    const action = ActionInner.create(this, actionFunction, modelGetter)
 
     this[actionsKey].set(actionFunction, action)
     this[actionIdsKey].set(action, ++this[actionsSizeKey])
