@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { isShallow, nextTick, watch } from 'vue'
 import { ActionExecutor } from '../src/action-executor'
-import { Action, Model } from '../src/types'
+import { Model } from '../src/types'
+import { ActionLike } from '../src/action'
 import { createApiMock } from './test-model/create-api-mock'
 import { createTestModel } from './test-model/create-test-model'
 import { TestProtoModel } from './test-model/test-proto-model'
@@ -124,7 +125,7 @@ describe('ActionExecutor', () => {
     })
 
     it('should throw error when servedAction is null', async () => {
-      executor.init(null as unknown as Action<TestProtoModel>)
+      executor.init(null as unknown as ActionLike<TestProtoModel>)
       
       await expect(executor.exec()).rejects.toThrow('Action not initialized')
     })

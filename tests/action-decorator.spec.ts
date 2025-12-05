@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, Mock, vi } from 'vitest'
-import { ActionInner } from '../src/action'
+import { Action, ActionLike } from '../src/action'
 import { action } from '../src/decorator/action'
 import { ProtoModel } from '../src/proto-model'
-import { Action, Model, OriginalMethodWrapper } from '../src/types'
+import { Model, OriginalMethodWrapper } from '../src/types'
 
 class TestProtoModel extends ProtoModel {
   property = 'test'
@@ -65,9 +65,9 @@ describe('Action decorator', () => {
 
       expect(typeof wrapper).toBe('function')
       expect(wrapper).not.toBe(originalMethod)
-      expect(wrapper[ActionInner.actionFlag]).toBeDefined()
-      expect(wrapper[ActionInner.actionFlag]).toBe(originalMethod)
-      expect(typeof wrapper[ActionInner.actionFlag]).toBe('function')
+      expect(wrapper[Action.actionFlag]).toBeDefined()
+      expect(wrapper[Action.actionFlag]).toBe(originalMethod)
+      expect(typeof wrapper[Action.actionFlag]).toBe('function')
     })
   })
 
@@ -85,7 +85,7 @@ describe('Action decorator', () => {
       const wrapper = action(originalMethod, context)
 
       expect(wrapper.name).toBe(symbolName.toString())
-      expect(wrapper[ActionInner.actionFlag]).toBe(originalMethod)
+      expect(wrapper[Action.actionFlag]).toBe(originalMethod)
     })
   })
 
@@ -119,7 +119,7 @@ describe('Action decorator', () => {
 
 describe('Original method wrapper execution', () => {
   let mockTarget: TestProtoModel
-  let actionMock: Action<TestProtoModel>
+  let actionMock: ActionLike<TestProtoModel>
   let actionMethodMock: Mock
   let wrapper: OriginalMethodWrapper<[number, string]>
   let originalMethod: TestMethod
@@ -129,12 +129,12 @@ describe('Original method wrapper execution', () => {
     originalMethod = getOriginalMethod(mockTarget, 'testAction')
 
     actionMock = {
-      owner: mockTarget as unknown as Model<TestProtoModel>,
+      owner: mockTarget,
       exec: vi.fn().mockResolvedValue(undefined),
       is: vi.fn().mockReturnValue(false),
       name: 'testAction',
-      state: ActionInner.possibleState.ready,
-      possibleStates: Object.values(ActionInner.possibleState),
+      state: Action.possibleState.ready,
+      possibleStates: Object.values(Action.possibleState),
       abortController: null,
       promise: null,
       error: null,
@@ -176,7 +176,7 @@ describe('Original method wrapper execution', () => {
     
     const wrapperArg = actionMethodMock.mock.calls[0][0] as OriginalMethodWrapper<[number, string]>
     expect(wrapperArg).toBe(wrapper)
-    expect(wrapperArg[ActionInner.actionFlag]).toBe(originalMethod)
+    expect(wrapperArg[Action.actionFlag]).toBe(originalMethod)
   })
 
   it('calls exec() on action with correct arguments preserving order and values', async () => {

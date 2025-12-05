@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest'
 import { createApiMock } from '../test-model/create-api-mock'
 import { createTestModel } from '../test-model/create-test-model'
-import { ActionInner } from '../../src/action'
+import { Action } from '../../src/action'
 import { ActionInternalError } from '../../src/error'
 import { TestProtoModel } from '../test-model/test-proto-model'
   
@@ -45,10 +45,10 @@ describe('Normal asynchronous method', () => {
     const model = createTestModel(apiMock)
 
     const action = model.normalAsyncMethodWithReturnDataAsAction
-    expect(action).toBeInstanceOf(ActionInner)
+    expect(action).toBeInstanceOf(Action)
 
     // eslint-disable-next-line
-    const result = await (action as unknown as ActionInner<TestProtoModel,[number]>).exec(10)
+    const result = await (action as unknown as Action<TestProtoModel,[number]>).exec(10)
     expect(result).toBeUndefined()
   })
 
@@ -57,7 +57,7 @@ describe('Normal asynchronous method', () => {
     const apiMock = createApiMock()
     const model = createTestModel(apiMock)
 
-    expect(model.normalAsyncMethodWithReturnDataAsAction).instanceOf(ActionInner)
+    expect(model.normalAsyncMethodWithReturnDataAsAction).instanceOf(Action)
   
     try {
       await model.normalAsyncMethodWithReturnDataAsAction(10)
@@ -84,8 +84,8 @@ describe('Synchronous method with @action decorator', () => {
     const apiMock = createApiMock()
     const model = createTestModel(apiMock)
   
-    expect(model.normalSyncMethodWithVoid).instanceOf(ActionInner)
-    expect(model.normalSyncMethodWithReturnDataAsAction).instanceOf(ActionInner)
+    expect(model.normalSyncMethodWithVoid).instanceOf(Action)
+    expect(model.normalSyncMethodWithReturnDataAsAction).instanceOf(Action)
   })
   
   test('and void result is Action and returns Promise<void>', async () => {
@@ -94,7 +94,7 @@ describe('Synchronous method with @action decorator', () => {
   
     const action = model.normalSyncMethodWithVoid
     // eslint-disable-next-line 
-    const result = await (action as unknown as ActionInner<TestProtoModel,[]>).exec()
+    const result = await (action as unknown as Action<TestProtoModel,[]>).exec()
     expect(result).toBeUndefined()
   })
   test('and not void result is Action and returns Promise<void>', async () => {
@@ -103,7 +103,7 @@ describe('Synchronous method with @action decorator', () => {
   
     const action = model.normalSyncMethodWithReturnDataAsAction
     // eslint-disable-next-line 
-    const result = await (action as unknown as ActionInner<TestProtoModel,[number]>).exec(10)
+    const result = await (action as unknown as Action<TestProtoModel,[number]>).exec(10)
     expect(result).toBeUndefined()
   })
   

@@ -20,7 +20,7 @@ describe('Action in PENDING state', () => {
   it('goes to ERROR state when an error occurs while executing the operation', async () => {
      
     const promise = model.singleErrorAction.exec()
-    validatePendingState(model.singleErrorAction, [], promise)
+    validatePendingState(model.singleErrorAction, promise)
     await promise
 
     validateErrorState(
@@ -38,7 +38,7 @@ describe('Action in PENDING state', () => {
     // We use model.nestedWithAbort because it emulate abort by signal.
      
     const actionPromise = model.actionWithAbort.exec()
-    validatePendingState(model.actionWithAbort, [], actionPromise)
+    validatePendingState(model.actionWithAbort, actionPromise)
     const lockPromise = model.actionWithAbort.lock()
 
     expect(Object.is(actionPromise, lockPromise)).toBeTruthy()
@@ -50,7 +50,7 @@ describe('Action in PENDING state', () => {
   it('goes to ABORT state after abort from external execution context', async () => {
      
     const promise = model.actionWithAbort.exec()
-    validatePendingState(model.actionWithAbort, [], promise)
+    validatePendingState(model.actionWithAbort, promise)
     const abortedPromise = model.actionWithAbort.abort('Abort reason')
 
     expect(Object.is(promise, abortedPromise)).toBeTruthy()
@@ -71,7 +71,7 @@ describe('Action in PENDING state', () => {
   it('throws error after trying unlock', async () => {
     const promise = model.successActionWithoutArgs.exec()
     expect(() => model.successActionWithoutArgs.unlock()).toThrow('Trying to update state of successActionWithoutArgs from pending to ready')
-    validatePendingState(model.successActionWithoutArgs, [], promise)
+    validatePendingState(model.successActionWithoutArgs, promise)
     await promise
     validateReadyState(model.successActionWithoutArgs)
   })
@@ -79,7 +79,7 @@ describe('Action in PENDING state', () => {
   it('throws error when trying to call resetError', async () => {
     const promise = model.successActionWithoutArgs.exec()
     expect(() => model.successActionWithoutArgs.resetError()).toThrow('Trying to update state of successActionWithoutArgs from pending to ready')
-    validatePendingState(model.successActionWithoutArgs, [], promise)
+    validatePendingState(model.successActionWithoutArgs, promise)
     await promise
     validateReadyState(model.successActionWithoutArgs)
   })
@@ -88,8 +88,8 @@ describe('Action in PENDING state', () => {
     const promise = model.actionWithCustomError.exec(new ActionInternalError('message'))
     validatePendingState(
       model.actionWithCustomError,
-      [new ActionInternalError('message')],
-      promise
+      promise,
+      new ActionInternalError('message'),
     )
     
     await expect(promise).rejects.toThrow(new ActionInternalError('message'))
@@ -99,8 +99,8 @@ describe('Action in PENDING state', () => {
     const promise = model.actionWithCustomError.exec(new RangeError('message'))
     validatePendingState(
       model.actionWithCustomError,
-      [new RangeError('message')],
-      promise
+      promise,
+      new RangeError('message'),
     )
     
     await expect(promise).rejects.toThrow(new RangeError('message'))
@@ -110,8 +110,8 @@ describe('Action in PENDING state', () => {
     const promise = model.actionWithCustomError.exec(new ReferenceError('message'))
     validatePendingState(
       model.actionWithCustomError,
-      [new ReferenceError('message')],
-      promise
+      promise,
+      new ReferenceError('message'),
     )
     
     await expect(promise).rejects.toThrow(new ReferenceError('message'))
@@ -121,8 +121,8 @@ describe('Action in PENDING state', () => {
     const promise = model.actionWithCustomError.exec(new SyntaxError('message'))
     validatePendingState(
       model.actionWithCustomError,
-      [new SyntaxError('message')],
-      promise
+      promise,
+      new SyntaxError('message'),
     )
     
     await expect(promise).rejects.toThrow(new SyntaxError('message'))
@@ -132,8 +132,8 @@ describe('Action in PENDING state', () => {
     const promise = model.actionWithCustomError.exec(new TypeError('message'))
     validatePendingState(
       model.actionWithCustomError,
-      [new TypeError('message')],
-      promise
+      promise,
+      new TypeError('message'),
     )
     
     await expect(promise).rejects.toThrow(new TypeError('message'))
@@ -143,8 +143,8 @@ describe('Action in PENDING state', () => {
     const promise = model.actionWithCustomError.exec(new URIError('message'))
     validatePendingState(
       model.actionWithCustomError,
-      [new URIError('message')],
-      promise
+      promise,
+      new URIError('message'),
     )
     
     await expect(promise).rejects.toThrow(new URIError('message'))
@@ -154,8 +154,8 @@ describe('Action in PENDING state', () => {
     const promise = model.actionWithCustomError.exec(new EvalError('message'))
     validatePendingState(
       model.actionWithCustomError,
-      [new EvalError('message')],
-      promise
+      promise,
+      new EvalError('message'),
     )
     
     await expect(promise).rejects.toThrow(new EvalError('message'))

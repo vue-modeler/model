@@ -1,4 +1,4 @@
-import { ActionInner } from '../action'
+import { Action } from '../action'
 import { ProtoModel } from '../proto-model'
 import { OriginalMethodWrapper } from '../types'
 
@@ -35,7 +35,7 @@ export function action<T extends ProtoModel, Args extends unknown[]>(
 
   // save original method. It will be used inside Action.exec
   // @see Action.exec
-  stubObj[name][ActionInner.actionFlag] = originalMethod
+  stubObj[name][Action.actionFlag] = originalMethod
 
   return stubObj[name]
 }

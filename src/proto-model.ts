@@ -1,13 +1,14 @@
 import { computed, ComputedGetter, ComputedRef, DebuggerOptions, effectScope, Ref, ref, ShallowReactive, watch, watchEffect, WatchStopHandle } from 'vue'
 
-import { ActionInner } from './action'
+import { Action, ActionLike } from './action'
 import { createModel } from './create-model'
 import { ActionInternalError } from './error'
-import { Action, ActionStateName, Model, OriginalMethod, OriginalMethodWrapper } from './types'
+import { ActionStateName, Model, OriginalMethod, OriginalMethodWrapper } from './types'
 
 
-type ModelConstructor = new (...args: any[]) => ProtoModel
+type ModelConstructor<T extends ProtoModel> = new (...args: any[]) => T
 
+// use symbols to avoid name collisions in prototype chain
 const scopeKey = Symbol('scope')
 const modelKey = Symbol('model')
 const actionsKey = Symbol('actions')
@@ -21,8 +22,8 @@ export abstract class ProtoModel {
   protected [scopeKey] = effectScope(true)
   protected [modelKey]: Model<this> | null = null
   // we use WeakMap to store actions as keys to avoid memory leaks
-  protected [actionsKey] = new WeakMap<OriginalMethodWrapper, ShallowReactive<Action<this>>>()
-  protected [actionIdsKey] = new WeakMap<ShallowReactive<Action<this>>, number>()
+  protected [actionsKey] = new WeakMap<OriginalMethodWrapper, ShallowReactive<ActionLike<Model<this>>>>()
+  protected [actionIdsKey] = new WeakMap<ShallowReactive<ActionLike<Model<this>>>, number>()
   protected [actionStatesKey] = new Map<ActionStateName, Ref<number>>()
   // WeakMap doesn't have a size property, so we need to store the size of the map
   protected [actionsSizeKey] = 0
@@ -54,11 +55,11 @@ export abstract class ProtoModel {
   }
   
   get hasPendingActions (): boolean {
-    return !!this.getActionStatesRef(ActionInner.possibleState.pending).value
+    return !!this.getActionStatesRef(Action.possibleState.pending).value
   }
 
   get hasActionWithError (): boolean {
-    return !!this.getActionStatesRef(ActionInner.possibleState.error).value
+    return !!this.getActionStatesRef(Action.possibleState.error).value
   }
 
   /**
@@ -161,7 +162,7 @@ export abstract class ProtoModel {
   }
 
 
-  protected createAction (actionFunction: OriginalMethodWrapper): ShallowReactive<Action<this>> {
+  protected createAction (actionFunction: OriginalMethodWrapper): ShallowReactive<ActionLike<Model<this>>> {
     const modelGetter = () => {
       if (!this[modelKey]) {
         throw new Error('Model not set')
@@ -170,7 +171,12 @@ export abstract class ProtoModel {
       return this[modelKey]
     }
 
-    const action = ActionInner.create(this, actionFunction, modelGetter)
+    const action = Action.create<this, unknown[], Model<this>>(
+      this,
+      actionFunction,
+      modelGetter,
+      this.setActionState.bind(this),
+    )
 
     this[actionsKey].set(actionFunction, action)
     this[actionIdsKey].set(action, ++this[actionsSizeKey])
@@ -231,9 +237,9 @@ export abstract class ProtoModel {
    * @param originalMethod - defined as OriginalMethod or OriginalMethodWrapper.
    * @returns action
   */
-  protected action (originalMethod: OriginalMethod | OriginalMethodWrapper): ShallowReactive<Action<this>> {
-    const isActionDecoratorApplied = ActionInner.actionFlag in originalMethod
-      && typeof originalMethod[ActionInner.actionFlag] === 'function'
+  protected action (originalMethod: OriginalMethod | OriginalMethodWrapper): ShallowReactive<ActionLike<Model<this>>> {
+    const isActionDecoratorApplied = Action.actionFlag in originalMethod
+      && typeof originalMethod[Action.actionFlag] === 'function'
 
     if (!isActionDecoratorApplied) {
       throw new ActionInternalError('Action decorator is not applied to the method')
@@ -248,7 +254,7 @@ export abstract class ProtoModel {
    * 
    * @see type Model<T>
    */
-  setActionState(action: Action<this>): void {
+  setActionState(action: ActionLike<Model<this>>): void {
     const actionId = this[actionIdsKey].get(action)
 
     if (!actionId) {
@@ -266,7 +272,7 @@ export abstract class ProtoModel {
     this.getActionStatesRef(action.state).value = this.updateBit(this.getActionStatesRef(action.state).value, actionId, true)
   }
 
-  isModelOf (typeModel: ModelConstructor): boolean {
+  isModelOf<T extends ProtoModel> (typeModel: ModelConstructor<T>): boolean {
     return this instanceof typeModel
   }
 

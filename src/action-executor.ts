@@ -1,20 +1,18 @@
 import { ProtoModel } from "./proto-model"
-import { Action } from './types'
+import { ActionLike } from './action'
 
-export class ActionExecutor<Model extends ProtoModel> extends ProtoModel {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  protected _servedAction: Action<Model, any[]> | null = null
+export class ActionExecutor<T extends object> extends ProtoModel {
+  protected _servedAction: ActionLike<T> | null = null
   protected _args: unknown[] | null = null
-  protected _error: Action<Model>['error'] | null = null
+  protected _error: ActionLike<T>['error'] | null = null
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  init<Args extends any[] = unknown[]>(action: Action<Model, Args>, ...args: Args): void {
-    this._servedAction = action satisfies Action<Model, Args>
+  init<Args extends unknown[]>(action: ActionLike<T, Args>, ...args: Args): void {
+    this._servedAction = action as ActionLike<T>
     this._args = args
     this._error = null
   } 
 
-  get servedAction(): Action<Model> | null {
+  get servedAction(): ActionLike<T> | null {
     return this._servedAction
   }
 
@@ -22,7 +20,7 @@ export class ActionExecutor<Model extends ProtoModel> extends ProtoModel {
     return this._args
   }
 
-  get error(): Action<Model>['error'] | null {
+  get error(): ActionLike<T>['error'] | null {
     return this._error
   }
 

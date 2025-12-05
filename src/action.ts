@@ -1,10 +1,10 @@
+import { shallowReactive } from 'vue'
 import { ActionError } from './error/action-error'
 import { ActionInternalError } from './error/action-internal-error'
 import { ActionStatusConflictError } from './error/action-status-conflict-error'
 import { ActionUnexpectedAbortError } from './error/action-unexpected-abort-error'
+import { ActionStateName, Model, OriginalMethodWrapper } from './types'
 import { ProtoModel } from './proto-model'
-import { Action, ActionStateName, Model, OriginalMethodWrapper } from './types'
-import { shallowReactive } from 'vue'
 
 const isAbortError = (originalError: unknown): boolean => (originalError instanceof DOMException
   && originalError.name === 'AbortError')
@@ -18,13 +18,43 @@ interface ActionPendingValue {
 type ActionValue = ActionPendingValue | ActionError | null
 
 /**
+ * Public API interface for Action instances.
+ * Describes only the public contract without implementation details.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export interface ActionLike<Owner extends object, Args extends any[] = unknown[]> {
+  readonly name: string
+  readonly owner: Owner
+  readonly possibleStates: ActionStateName[]
+  readonly state: ActionStateName
+  readonly abortController: null | AbortController
+  readonly args: Args | never[]
+  readonly promise: null | Promise<void>
+  readonly error: null | ActionError
+  readonly abortReason: unknown
+  readonly isPending: boolean
+  readonly isError: boolean
+  readonly isReady: boolean
+  readonly isLock: boolean
+  readonly isAbort: boolean
+
+  is (...args: ActionStateName[]): boolean
+  exec (...args: Args): Promise<void>
+  abort (reason?: unknown): Promise<void>
+  lock (): Promise<void>
+  unlock (): this
+  resetError (): this
+  toString (): string
+}
+
+/**
  * We should to use here `<T extends ProtoModel>` because 
  * we need some methods from `ProtoModel` class which are protected in context of `Model<T>`.
  * For example, `setActionState` method.
  * @see `ProtoModel.setActionState`
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export class ActionInner<T extends ProtoModel, Args extends any[] = unknown[]> {
+export class Action<T extends object, Args extends any[] = unknown[], Owner extends object = Model<T>> implements ActionLike<Owner, Args> {
   static readonly actionFlag = Symbol('__action_original_method__')
   static readonly possibleState = {
     pending: 'pending',
@@ -37,14 +67,19 @@ export class ActionInner<T extends ProtoModel, Args extends any[] = unknown[]> {
   static abortedByLock = Symbol('lock')
 
   readonly name: string
-  protected _state: ActionStateName = ActionInner.possibleState.ready
+  protected _state: ActionStateName = Action.possibleState.ready
   protected _value: ActionValue = null
   protected _args: Args | null = null
 
   constructor (
-    protected _model: T, // TODO: thing about this arg, it may be potential problem
+    protected _model: T,
     protected actionFunction: OriginalMethodWrapper<Args>,
-    protected modelGetter: () => Model<T>,
+    protected ownerGetter: () => Owner,
+    protected setStateCb?: (
+      action: ActionLike<Owner, Args>,
+      oldState: ActionStateName,
+      newState: ActionStateName,
+    ) => void,
   ) {
     const name = actionFunction.name
 
@@ -55,7 +90,7 @@ export class ActionInner<T extends ProtoModel, Args extends any[] = unknown[]> {
       throw new ActionInternalError(`Model does not contain method ${name}`)
     }
 
-    if (typeof actionFunction[ActionInner.actionFlag] !== 'function') {
+    if (typeof actionFunction[Action.actionFlag] !== 'function') {
       throw new ActionInternalError(`Method ${name} is not action`)
     }
 
@@ -63,24 +98,30 @@ export class ActionInner<T extends ProtoModel, Args extends any[] = unknown[]> {
   }
 
 
-  static create<T extends ProtoModel, Args extends unknown[] = unknown[]>(
+  static create<T extends ProtoModel, Args extends unknown[] = unknown[], Owner extends object = Model<T>>(
     model: T,
     actionFunction: OriginalMethodWrapper<Args>,
-    modelGetter: () => Model<T>
-  ): ActionInner<T, Args> {
-    return shallowReactive(new ActionInner(model, actionFunction, modelGetter))
+    ownerGetter: () => Owner,
+    setStateCb?: (
+      action: ActionLike<Owner, Args>,
+      oldState: ActionStateName,
+      newState: ActionStateName,
+    ) => void,
+  ): Action<T, Args, Owner> {
+    
+    return shallowReactive(new Action(model, actionFunction, ownerGetter, setStateCb))
   }
 
   toString (): string {
     return this.name
   }
 
-  get owner (): Model<T> {
-    return this.modelGetter()
+  get owner (): Owner {
+    return this.ownerGetter()
   }
 
   get possibleStates (): ActionStateName[] {
-    return Object.values(ActionInner.possibleState)
+    return Object.values(Action.possibleState)
   }
 
   get state (): ActionStateName {
@@ -88,10 +129,15 @@ export class ActionInner<T extends ProtoModel, Args extends any[] = unknown[]> {
   }
 
   protected set state (newState: ActionStateName) {
+    const oldState = this._state
     this._state = newState
 
+    if (!this.setStateCb) {
+      return 
+    }
+    
     // Args of action are not important for setActionState method
-    this._model.setActionState(this as unknown as Action<T>)
+    this.setStateCb(this, oldState, newState)
   }
 
   get abortController (): null | AbortController {
@@ -132,23 +178,23 @@ export class ActionInner<T extends ProtoModel, Args extends any[] = unknown[]> {
   }
 
   get isPending (): boolean {
-    return this.state === ActionInner.possibleState.pending
+    return this.state === Action.possibleState.pending
   }
 
   get isError (): boolean {
-    return this.state === ActionInner.possibleState.error
+    return this.state === Action.possibleState.error
   }
 
   get isReady (): boolean {
-    return this.state === ActionInner.possibleState.ready
+    return this.state === Action.possibleState.ready
   }
 
   get isLock (): boolean {
-    return this.state === ActionInner.possibleState.lock
+    return this.state === Action.possibleState.lock
   }
 
   get isAbort (): boolean {
-    return this.state === ActionInner.possibleState.abort
+    return this.state === Action.possibleState.abort
   }
 
   is (...args: ActionStateName[]): boolean {
@@ -159,11 +205,11 @@ export class ActionInner<T extends ProtoModel, Args extends any[] = unknown[]> {
    * Put into action in PENDING state  
    */
   exec (...args: Args): Promise<void> {
-    if (this.is(ActionInner.possibleState.lock, ActionInner.possibleState.pending)) {
+    if (this.is(Action.possibleState.lock, Action.possibleState.pending)) {
       throw new ActionStatusConflictError(
         this.name,
         this.state,
-        ActionInner.possibleState.pending,
+        Action.possibleState.pending,
       )
     }
 
@@ -180,17 +226,17 @@ export class ActionInner<T extends ProtoModel, Args extends any[] = unknown[]> {
     // to block recursive calls.  Since the action status is already pending,
     // a recursive call will result in an action status conflict error with message:
     // "Try to change someActionName status from pending to pending"
-    this.state = ActionInner.possibleState.pending
+    this.state = Action.possibleState.pending
     this._args = args
 
-    const originalMethod = this.actionFunction[ActionInner.actionFlag]
+    const originalMethod = this.actionFunction[Action.actionFlag]
     const result = originalMethod.apply(this._model, newArgs)
 
     // Result can be not a promise.
     // But exec must return promise.
     // So we need to check it and wrap result in promise.
     if (!(result instanceof Promise)) {
-      this.state = ActionInner.possibleState.ready
+      this.state = Action.possibleState.ready
 
       return Promise.resolve()
     }
@@ -214,23 +260,23 @@ export class ActionInner<T extends ProtoModel, Args extends any[] = unknown[]> {
 
         const isAbort = isAbortError(originalError)
 
-        if (isAbort && !this.is(ActionInner.possibleState.pending, ActionInner.possibleState.lock)) {
+        if (isAbort && !this.is(Action.possibleState.pending, Action.possibleState.lock)) {
           throw new ActionUnexpectedAbortError(this.name, this.state)
         }
 
         const isAbortedForLock = isAbort
           && (this._value as ActionPendingValue).abortController instanceof AbortController
-          && (this._value as ActionPendingValue).abortController.signal.reason === ActionInner.abortedByLock
+          && (this._value as ActionPendingValue).abortController.signal.reason === Action.abortedByLock
 
         if (isAbortedForLock) {
-          this.state = ActionInner.possibleState.lock
+          this.state = Action.possibleState.lock
           this._value = null
 
           return
         }
 
         if (isAbort) {
-          this.state = ActionInner.possibleState.abort
+          this.state = Action.possibleState.abort
           
           return
         }
@@ -287,10 +333,10 @@ export class ActionInner<T extends ProtoModel, Args extends any[] = unknown[]> {
     
   lock (): Promise<void> {
     if (this.isPending) {
-      return this.abort(ActionInner.abortedByLock)
+      return this.abort(Action.abortedByLock)
     }
 
-    this.state = ActionInner.possibleState.lock
+    this.state = Action.possibleState.lock
     this._value = null
 
     return Promise.resolve()
@@ -301,7 +347,7 @@ export class ActionInner<T extends ProtoModel, Args extends any[] = unknown[]> {
       throw new ActionStatusConflictError(
         this.name,
         this.state,
-        ActionInner.possibleState.ready,
+        Action.possibleState.ready,
       )
     }
 
@@ -313,18 +359,18 @@ export class ActionInner<T extends ProtoModel, Args extends any[] = unknown[]> {
       throw new ActionStatusConflictError(
         this.name,
         this.state,
-        ActionInner.possibleState.error,
+        Action.possibleState.error,
       )
     }
 
-    this.state = ActionInner.possibleState.error
+    this.state = Action.possibleState.error
     this._value = error
 
     return this
   }
 
   protected ready (): this {
-    this.state = ActionInner.possibleState.ready
+    this.state = Action.possibleState.ready
 
     return this
   }
@@ -334,7 +380,7 @@ export class ActionInner<T extends ProtoModel, Args extends any[] = unknown[]> {
       throw new ActionStatusConflictError(
         this.name,
         this.state,
-        ActionInner.possibleState.ready,
+        Action.possibleState.ready,
       )
     }
 
