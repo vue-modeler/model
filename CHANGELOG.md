@@ -1,3 +1,9 @@
+## [2.2.0-beta.1](https://github.com/vue-modeler/model/compare/v2.1.1-beta.1...v2.2.0-beta.1) (2025-12-04)
+
+### Features
+
+* **action-executor:** implement ActionExecutor class with initialization and execution logic ([a2dd2e6](https://github.com/vue-modeler/model/commit/a2dd2e668f3a2718117ef126e8b467a5ac4fc236))
+
 ## [2.1.1-beta.1](https://github.com/vue-modeler/model/compare/v2.1.0...v2.1.1-beta.1) (2025-09-22)
 
 ### Bug Fixes
