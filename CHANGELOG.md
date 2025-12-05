@@ -1,3 +1,9 @@
+## [2.2.0-beta.3](https://github.com/vue-modeler/model/compare/v2.2.0-beta.2...v2.2.0-beta.3) (2025-12-05)
+
+### Bug Fixes
+
+* **index:** export action module to enhance functionality ([8ed9938](https://github.com/vue-modeler/model/commit/8ed99383db3598f5c4bf7e36be8af8f86d6d012f))
+
 ## [2.2.0-beta.2](https://github.com/vue-modeler/model/compare/v2.2.0-beta.1...v2.2.0-beta.2) (2025-12-05)
 
 ### Features
