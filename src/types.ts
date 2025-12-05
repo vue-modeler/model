@@ -1,5 +1,5 @@
 import { ShallowReactive } from 'vue'
-import { Action, ActionLike } from './action'
+import { Action, SrActionLike } from './action'
 import { ProtoModel } from './proto-model'
 
 export type OriginalMethod = (...args: any[]) => Promise<void>
@@ -16,7 +16,7 @@ export type ProtectedMethodInModel = 'action' | 'setActionState'
 export type Model<T extends object = object> = ShallowReactive<{
   [K in keyof T]:
     T[K] extends ((...args: infer Args) => Promise<void>)
-      ? ActionLike<T, Args>
+      ? SrActionLike<T, Args>
       : K extends ProtectedMethodInModel
         ? never
         : T[K]

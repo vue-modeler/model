@@ -1,18 +1,18 @@
 import { ProtoModel } from "./proto-model"
-import { ActionLike } from './action'
+import { SrActionLike } from './action'
 
 export class ActionExecutor<T extends object> extends ProtoModel {
-  protected _servedAction: ActionLike<T> | null = null
+  protected _servedAction: SrActionLike<T> | null = null
   protected _args: unknown[] | null = null
-  protected _error: ActionLike<T>['error'] | null = null
+  protected _error: SrActionLike<T>['error'] | null = null
 
-  init<Args extends unknown[]>(action: ActionLike<T, Args>, ...args: Args): void {
-    this._servedAction = action as ActionLike<T>
+  init<Args extends unknown[]>(action: SrActionLike<T, Args>, ...args: Args): void {
+    this._servedAction = action as SrActionLike<T>
     this._args = args
     this._error = null
   } 
 
-  get servedAction(): ActionLike<T> | null {
+  get servedAction(): SrActionLike<T> | null {
     return this._servedAction
   }
 
@@ -20,7 +20,7 @@ export class ActionExecutor<T extends object> extends ProtoModel {
     return this._args
   }
 
-  get error(): ActionLike<T>['error'] | null {
+  get error(): SrActionLike<T>['error'] | null {
     return this._error
   }
 

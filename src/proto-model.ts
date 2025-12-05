@@ -1,6 +1,6 @@
-import { computed, ComputedGetter, ComputedRef, DebuggerOptions, effectScope, Ref, ref, ShallowReactive, watch, watchEffect, WatchStopHandle } from 'vue'
+import { computed, ComputedGetter, ComputedRef, DebuggerOptions, effectScope, Ref, ref, watch, watchEffect, WatchStopHandle } from 'vue'
 
-import { Action, ActionLike } from './action'
+import { Action, SrActionLike } from './action'
 import { createModel } from './create-model'
 import { ActionInternalError } from './error'
 import { ActionStateName, Model, OriginalMethod, OriginalMethodWrapper } from './types'
@@ -22,8 +22,8 @@ export abstract class ProtoModel {
   protected [scopeKey] = effectScope(true)
   protected [modelKey]: Model<this> | null = null
   // we use WeakMap to store actions as keys to avoid memory leaks
-  protected [actionsKey] = new WeakMap<OriginalMethodWrapper, ShallowReactive<ActionLike<Model<this>>>>()
-  protected [actionIdsKey] = new WeakMap<ShallowReactive<ActionLike<Model<this>>>, number>()
+  protected [actionsKey] = new WeakMap<OriginalMethodWrapper, SrActionLike<Model<this>>>()
+  protected [actionIdsKey] = new WeakMap<SrActionLike<Model<this>>, number>()
   protected [actionStatesKey] = new Map<ActionStateName, Ref<number>>()
   // WeakMap doesn't have a size property, so we need to store the size of the map
   protected [actionsSizeKey] = 0
@@ -162,7 +162,7 @@ export abstract class ProtoModel {
   }
 
 
-  protected createAction (actionFunction: OriginalMethodWrapper): ShallowReactive<ActionLike<Model<this>>> {
+  protected createAction (actionFunction: OriginalMethodWrapper): SrActionLike<Model<this>> {
     const modelGetter = () => {
       if (!this[modelKey]) {
         throw new Error('Model not set')
@@ -237,7 +237,7 @@ export abstract class ProtoModel {
    * @param originalMethod - defined as OriginalMethod or OriginalMethodWrapper.
    * @returns action
   */
-  protected action (originalMethod: OriginalMethod | OriginalMethodWrapper): ShallowReactive<ActionLike<Model<this>>> {
+  protected action (originalMethod: OriginalMethod | OriginalMethodWrapper): SrActionLike<Model<this>> {
     const isActionDecoratorApplied = Action.actionFlag in originalMethod
       && typeof originalMethod[Action.actionFlag] === 'function'
 
@@ -254,7 +254,7 @@ export abstract class ProtoModel {
    * 
    * @see type Model<T>
    */
-  setActionState(action: ActionLike<Model<this>>): void {
+  setActionState(action: SrActionLike<Model<this>>): void {
     const actionId = this[actionIdsKey].get(action)
 
     if (!actionId) {

@@ -1,4 +1,4 @@
-import { shallowReactive } from 'vue'
+import { shallowReactive, ShallowReactive } from 'vue'
 import { ActionError } from './error/action-error'
 import { ActionInternalError } from './error/action-internal-error'
 import { ActionStatusConflictError } from './error/action-status-conflict-error'
@@ -48,6 +48,13 @@ export interface ActionLike<Owner extends object, Args extends any[] = unknown[]
 }
 
 /**
+ * Reactive ActionLike type - ActionLike wrapped in ShallowReactive.
+ * This is the type used throughout the codebase for action instances.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type SrActionLike<Owner extends object, Args extends any[] = unknown[]> = ShallowReactive<ActionLike<Owner, Args>>
+
+/**
  * We should to use here `<T extends ProtoModel>` because 
  * we need some methods from `ProtoModel` class which are protected in context of `Model<T>`.
  * For example, `setActionState` method.
@@ -76,7 +83,7 @@ export class Action<T extends object, Args extends any[] = unknown[], Owner exte
     protected actionFunction: OriginalMethodWrapper<Args>,
     protected ownerGetter: () => Owner,
     protected setStateCb?: (
-      action: ActionLike<Owner, Args>,
+      action: SrActionLike<Owner, Args>,
       oldState: ActionStateName,
       newState: ActionStateName,
     ) => void,
@@ -103,11 +110,11 @@ export class Action<T extends object, Args extends any[] = unknown[], Owner exte
     actionFunction: OriginalMethodWrapper<Args>,
     ownerGetter: () => Owner,
     setStateCb?: (
-      action: ActionLike<Owner, Args>,
+      action: SrActionLike<Owner, Args>,
       oldState: ActionStateName,
       newState: ActionStateName,
     ) => void,
-  ): Action<T, Args, Owner> {
+  ): SrActionLike<Owner, Args> {
     
     return shallowReactive(new Action(model, actionFunction, ownerGetter, setStateCb))
   }
