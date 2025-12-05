@@ -1,12 +1,12 @@
 import { describe, expect, test } from 'vitest'
 import { ActionStatusConflictError } from '../../src/error/action-status-conflict-error'
-import { ActionInner } from '../../src/action'
+import { Action } from '../../src/action'
 
 describe('ActionStatusConflictError', () => {
   test('creates error with correct message format', () => {
     const actionName = 'testAction'
-    const fromStatus = ActionInner.possibleState.ready
-    const toStatus = ActionInner.possibleState.pending
+    const fromStatus = Action.possibleState.ready
+    const toStatus = Action.possibleState.pending
     const error = new ActionStatusConflictError(actionName, fromStatus, toStatus)
 
     expect(error).toBeInstanceOf(Error)

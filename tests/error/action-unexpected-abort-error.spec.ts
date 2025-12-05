@@ -1,11 +1,11 @@
 import { describe, expect, test } from 'vitest'
 import { ActionUnexpectedAbortError } from '../../src/error/action-unexpected-abort-error'
-import { ActionInner } from '../../src/action'
+import { Action } from '../../src/action'
 
 describe('ActionUnexpectedAbortError', () => {
   test('creates error with correct message format', () => {
     const actionName = 'testAction'
-    const currentState = ActionInner.possibleState.ready
+    const currentState = Action.possibleState.ready
     const error = new ActionUnexpectedAbortError(actionName, currentState)
 
     expect(error).toBeInstanceOf(Error)

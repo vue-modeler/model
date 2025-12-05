@@ -15,7 +15,7 @@ describe('Action in READY state', () => {
 
   it('goes to PENDING state', () => {
     const promise = model.successActionWithoutArgs.exec()
-    validatePendingState(model.successActionWithoutArgs, [], promise)
+    validatePendingState(model.successActionWithoutArgs, promise)
   })
 
   it('goes to LOCK state', () => {

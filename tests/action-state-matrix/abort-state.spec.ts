@@ -19,7 +19,7 @@ describe('Action in ABORT state', () => {
   it('goes to PENDING state', () => {
     validateAbortState(model.actionWithAbort, 'Abort reason')
     const promise = model.actionWithAbort.exec()
-    validatePendingState(model.actionWithAbort, [], promise)
+    validatePendingState(model.actionWithAbort, promise)
   })
 
   it('goes to LOCK state', () => {

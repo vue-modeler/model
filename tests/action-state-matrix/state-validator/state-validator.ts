@@ -1,10 +1,10 @@
 import { expect } from 'vitest'
 import { ProtoModel } from '../../../src'
 import { ActionError } from '../../../src/error/action-error'
-import { Action } from '../../../src/types'
+import { ActionLike } from '../../../src/action'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function validateLockState<T extends ProtoModel, Args extends any[] = unknown[]> (action: Action<T, Args>, args: Args = [] as unknown as Args): void {
+export function validateLockState<T extends ProtoModel, Args extends any[] = unknown[]> (action: ActionLike<T, Args>, args: Args = [] as unknown as Args): void {
   expect(action.state).toBe('lock')
   expect(action.isPending).toBeFalsy()
   expect(action.isReady).toBeFalsy()
@@ -18,7 +18,7 @@ export function validateLockState<T extends ProtoModel, Args extends any[] = unk
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function validateErrorState<T extends ProtoModel, Args extends any[] = unknown[]> (action: Action<T, Args>, error: Error, args: Args = [] as unknown as Args): void {
+export function validateErrorState<T extends ProtoModel, Args extends any[] = unknown[]> (action: ActionLike<T, Args>, error: Error, args: Args = [] as unknown as Args): void {
   expect(action.state).toBe('error')
   expect(action.isPending).toBeFalsy()
   expect(action.isReady).toBeFalsy()
@@ -33,7 +33,7 @@ export function validateErrorState<T extends ProtoModel, Args extends any[] = un
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function validatePendingState<T extends ProtoModel, Args extends any[] = unknown[]> (action: Action<T, Args>, args: Args = [] as unknown as Args, promise: Promise<unknown>): void {
+export function validatePendingState<T extends ProtoModel, Args extends any[] = unknown[]> (action: ActionLike<T, Args>, promise: Promise<unknown>, ...args: Args): void {
   expect(action.state).toBe('pending')
   expect(action.isPending).toBeTruthy()
   expect(action.isReady).toBeFalsy()
@@ -49,7 +49,7 @@ export function validatePendingState<T extends ProtoModel, Args extends any[] = 
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function validateReadyState<T extends ProtoModel, Args extends any[] = unknown[]> (action: Action<T, Args>) : void {
+export function validateReadyState<T extends ProtoModel, Args extends any[] = unknown[]> (action: ActionLike<T, Args>) : void {
   expect(action.isReady).toBeTruthy()
   expect(action.abortController).toBeNull()
   expect(action.error).toBeNull()
@@ -66,7 +66,7 @@ export function validateReadyState<T extends ProtoModel, Args extends any[] = un
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function validateAbortState<T extends ProtoModel, Args extends any[] = unknown[]> (action: Action<T, Args>, reason: unknown, args: Args = [] as unknown as Args): void {
+export function validateAbortState<T extends ProtoModel, Args extends any[] = unknown[]> (action: ActionLike<T, Args>, reason: unknown, args: Args = [] as unknown as Args): void {
   expect(action.state).toBe('abort')
   expect(action.isAbort).toBeTruthy()
   expect(action.abortController).toBeNull()
