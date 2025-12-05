@@ -1,3 +1,9 @@
+## [2.2.0-beta.2](https://github.com/vue-modeler/model/compare/v2.2.0-beta.1...v2.2.0-beta.2) (2025-12-05)
+
+### Features
+
+* **action:** summary - created interface ActionLike and SrActionLike for improved reactivity ([4766f48](https://github.com/vue-modeler/model/commit/4766f4837767e0c44d807e2b23b7e233394e38cd))
+
 ## [2.2.0-beta.1](https://github.com/vue-modeler/model/compare/v2.1.1-beta.1...v2.2.0-beta.1) (2025-12-04)
 
 ### Features
