@@ -2,7 +2,8 @@ import { beforeEach, describe, expect, it, Mock, vi } from 'vitest'
 import { Action, ActionLike } from '../src/action'
 import { action } from '../src/decorator/action'
 import { ProtoModel } from '../src/proto-model'
-import { Model, OriginalMethodWrapper } from '../src/types'
+import { OriginalMethodWrapper } from '../src/types'
+import { createModel } from '../src/create-model'
 
 class TestProtoModel extends ProtoModel {
   property = 'test'
@@ -129,7 +130,7 @@ describe('Original method wrapper execution', () => {
     originalMethod = getOriginalMethod(mockTarget, 'testAction')
 
     actionMock = {
-      owner: mockTarget,
+      owner: createModel(mockTarget),
       exec: vi.fn().mockResolvedValue(undefined),
       is: vi.fn().mockReturnValue(false),
       name: 'testAction',
@@ -180,11 +181,13 @@ describe('Original method wrapper execution', () => {
   })
 
   it('calls exec() on action with correct arguments preserving order and values', async () => {
+    // eslint-disable-next-line @typescript-eslint/unbound-method
+    const execMock = actionMock.exec
     const boundWrapper = wrapper.bind(mockTarget)
     const args: [number, string] = [100, 'world']
     await boundWrapper(...args)
 
-    expect(actionMock.exec).toHaveBeenCalledTimes(1)
-    expect(actionMock.exec).toHaveBeenCalledWith(100, 'world')
+    expect(execMock).toHaveBeenCalledTimes(1)
+    expect(execMock).toHaveBeenCalledWith(100, 'world')
   })
 })

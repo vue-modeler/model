@@ -1,10 +1,10 @@
-import { shallowReactive, ShallowReactive } from 'vue'
+import { shallowReactive } from 'vue'
 import { ActionError } from './error/action-error'
 import { ActionInternalError } from './error/action-internal-error'
 import { ActionStatusConflictError } from './error/action-status-conflict-error'
 import { ActionUnexpectedAbortError } from './error/action-unexpected-abort-error'
-import { ActionStateName, Model, OriginalMethodWrapper } from './types'
 import { ProtoModel } from './proto-model'
+import { ActionStateName, Model, OriginalMethodWrapper } from './types'
 
 const isAbortError = (originalError: unknown): boolean => (originalError instanceof DOMException
   && originalError.name === 'AbortError')
@@ -22,9 +22,9 @@ type ActionValue = ActionPendingValue | ActionError | null
  * Describes only the public contract without implementation details.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export interface ActionLike<Owner extends object, Args extends any[] = unknown[]> {
+export interface ActionLike<T extends object, Args extends any[] = unknown[]> {
   readonly name: string
-  readonly owner: Owner
+  readonly owner: Model<T>
   readonly possibleStates: ActionStateName[]
   readonly state: ActionStateName
   readonly abortController: null | AbortController
@@ -48,20 +48,13 @@ export interface ActionLike<Owner extends object, Args extends any[] = unknown[]
 }
 
 /**
- * Reactive ActionLike type - ActionLike wrapped in ShallowReactive.
- * This is the type used throughout the codebase for action instances.
- */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type SrActionLike<Owner extends object, Args extends any[] = unknown[]> = ShallowReactive<ActionLike<Owner, Args>>
-
-/**
  * We should to use here `<T extends ProtoModel>` because 
  * we need some methods from `ProtoModel` class which are protected in context of `Model<T>`.
  * For example, `setActionState` method.
  * @see `ProtoModel.setActionState`
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export class Action<T extends object, Args extends any[] = unknown[], Owner extends object = Model<T>> implements ActionLike<Owner, Args> {
+export class Action<T extends object, Args extends any[] = unknown[]> implements ActionLike<T, Args> {
   static readonly actionFlag = Symbol('__action_original_method__')
   static readonly possibleState = {
     pending: 'pending',
@@ -81,9 +74,9 @@ export class Action<T extends object, Args extends any[] = unknown[], Owner exte
   constructor (
     protected _model: T,
     protected actionFunction: OriginalMethodWrapper<Args>,
-    protected ownerGetter: () => Owner,
+    protected ownerGetter: () => Model<T>,
     protected setStateCb?: (
-      action: SrActionLike<Owner, Args>,
+      action: ActionLike<T, Args>,
       oldState: ActionStateName,
       newState: ActionStateName,
     ) => void,
@@ -105,16 +98,16 @@ export class Action<T extends object, Args extends any[] = unknown[], Owner exte
   }
 
 
-  static create<T extends ProtoModel, Args extends unknown[] = unknown[], Owner extends object = Model<T>>(
+  static create<T extends ProtoModel, Args extends unknown[] = unknown[]>(
     model: T,
     actionFunction: OriginalMethodWrapper<Args>,
-    ownerGetter: () => Owner,
+    ownerGetter: () => Model<T>,
     setStateCb?: (
-      action: SrActionLike<Owner, Args>,
+      action: ActionLike<T, Args>,
       oldState: ActionStateName,
       newState: ActionStateName,
     ) => void,
-  ): SrActionLike<Owner, Args> {
+  ): ActionLike<T, Args> {
     
     return shallowReactive(new Action(model, actionFunction, ownerGetter, setStateCb))
   }
@@ -123,7 +116,7 @@ export class Action<T extends object, Args extends any[] = unknown[], Owner exte
     return this.name
   }
 
-  get owner (): Owner {
+  get owner (): Model<T> {
     return this.ownerGetter()
   }
 
