@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, Mock, vi } from 'vitest'
 import { Action, ActionLike } from '../src/action'
+import { createModel } from '../src/create-model'
 import { action } from '../src/decorator/action'
 import { ProtoModel } from '../src/proto-model'
 import { OriginalMethodWrapper } from '../src/types'
-import { createModel } from '../src/create-model'
 
 class TestProtoModel extends ProtoModel {
   property = 'test'
@@ -87,6 +87,19 @@ describe('Action decorator', () => {
 
       expect(wrapper.name).toBe(symbolName.toString())
       expect(wrapper[Action.actionFlag]).toBe(originalMethod)
+    })
+
+    it('throws helpful error when method name cannot be stringified', () => {
+      const brokenName = {
+        toString: vi.fn(() => {
+          throw new Error('test failure')
+        }),
+      }
+      const context = createContext(originalMethod, brokenName as unknown as string | symbol)
+
+      expect(() => action(originalMethod, context)).toThrow(
+        'Invalid context. Can`t get name of the method: test failure'
+      )
     })
   })
 
