@@ -4,18 +4,11 @@ import { Action, ActionLike } from './action'
 import { createModel } from './create-model'
 import { ActionInternalError } from './error'
 import { ActionStateName, Model, OriginalMethod, OriginalMethodWrapper } from './types'
+import { modelKey, actionsKey, actionIdsKey, actionStatesKey, actionsSizeKey, watchStopHandlersKey, scopeKey } from './prop-keys'
 
 
 type ModelConstructor<T extends ProtoModel> = new (...args: any[]) => T
 
-// use symbols to avoid name collisions in prototype chain
-const scopeKey = Symbol('scope')
-const modelKey = Symbol('model')
-const actionsKey = Symbol('actions')
-const actionIdsKey = Symbol('actionIds')
-const actionStatesKey = Symbol('actionStates')
-const actionsSizeKey = Symbol('actionsSize')
-const watchStopHandlersKey = Symbol('watchStopHandlers')
 
 export abstract class ProtoModel {
   // each model has its own effect scope to avoid memory leaks
@@ -48,10 +41,8 @@ export abstract class ProtoModel {
     }
 
     const protoModel = new this(...args)
-    const model = ProtoModel.createModel(protoModel)
 
-    protoModel[modelKey] = model
-    return model
+    return ProtoModel.createModel(protoModel)
   }
   
   get hasPendingActions (): boolean {

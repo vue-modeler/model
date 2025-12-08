@@ -3,6 +3,7 @@ import { shallowReactive } from 'vue'
 import { Action } from './action'
 import { ProtoModel } from './proto-model'
 import { Model, ModelAdapterProxyConstructor, OriginalMethodWrapper } from './types'
+import { modelKey } from './prop-keys'
 
  
 const ModelProxy = Proxy as ModelAdapterProxyConstructor
@@ -98,5 +99,7 @@ export function createModel<Target extends ProtoModel> (
     },
   )
 
+  protoModel[modelKey] = model
+  
   return model
 }
