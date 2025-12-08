@@ -1,3 +1,9 @@
+## [2.2.0-beta.6](https://github.com/vue-modeler/model/compare/v2.2.0-beta.5...v2.2.0-beta.6) (2025-12-08)
+
+### Bug Fixes
+
+* **proto-model:**  modelKey added  into ProtoModel.createModel instead ProtoModel.model ([e5a9609](https://github.com/vue-modeler/model/commit/e5a960999c0ed4564193e82981ce8755bd1b04f1))
+
 ## [2.2.0-beta.5](https://github.com/vue-modeler/model/compare/v2.2.0-beta.4...v2.2.0-beta.5) (2025-12-08)
 
 ### Bug Fixes
