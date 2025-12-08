@@ -1,3 +1,9 @@
+## [2.2.0-beta.7](https://github.com/vue-modeler/model/compare/v2.2.0-beta.6...v2.2.0-beta.7) (2025-12-08)
+
+### Features
+
+* **action:** add argument validation to Action class ([0a9edc6](https://github.com/vue-modeler/model/commit/0a9edc64c4f71a9f0b04a17138f5adb3f1c9ae5b))
+
 ## [2.2.0-beta.6](https://github.com/vue-modeler/model/compare/v2.2.0-beta.5...v2.2.0-beta.6) (2025-12-08)
 
 ### Bug Fixes
