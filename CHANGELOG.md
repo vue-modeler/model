@@ -1,3 +1,9 @@
+## [2.2.0-beta.5](https://github.com/vue-modeler/model/compare/v2.2.0-beta.4...v2.2.0-beta.5) (2025-12-08)
+
+### Bug Fixes
+
+* **action:** improve error handling for method name retrieval ([73afe1a](https://github.com/vue-modeler/model/commit/73afe1a22586dd8a3cfaa39dacdc68daa6872785))
+
 ## [2.2.0-beta.4](https://github.com/vue-modeler/model/compare/v2.2.0-beta.3...v2.2.0-beta.4) (2025-12-07)
 
 ### Bug Fixes
