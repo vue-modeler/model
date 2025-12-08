@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { isShallow } from 'vue'
+import { action } from '../src/decorator/action'
 import { ProtoModel } from '../src/proto-model'
 import { Model } from '../src/types'
+import { createModel } from '../src/create-model'
 
 class TestProtoModel extends ProtoModel {
   constructor(
@@ -25,6 +27,13 @@ class TestProtoModelWithActions extends ProtoModel {
 
   async testAction(): Promise<void> {
     await this.api.fetch()
+  }
+}
+
+class TestProtoModelWithActionForModelKeyTest extends ProtoModel {
+  @action
+  async testAction(): Promise<void> {
+    return Promise.resolve()
   }
 }
 
@@ -96,5 +105,25 @@ describe('ProtoModel.model', () => {
   it('throws error when trying to create ProtoModel directly', () => {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
     expect(() => {(ProtoModel as any).model()}).toThrow('ProtoModel is abstract class and can not be instantiated')
+  })
+
+  it('sets modelKey correctly when using ProtoModel.model()', () => {
+    const model = TestProtoModelWithActionForModelKeyTest.model()
+
+    // modelKey should be set, so action should work
+    const action = model.testAction
+    expect(action).toBeDefined()
+    expect(() => action.owner).not.toThrow('Model not set')
+    expect(model).toBe(action.owner)
+  })
+
+  it('sets modelKey correctly when using createModel()', () => {
+    const protoModel = new TestProtoModelWithActionForModelKeyTest()
+    const model = createModel(protoModel)
+
+    const action = model.testAction
+    expect(action).toBeDefined()
+    expect(() => action.owner).not.toThrow('Model not set')
+    expect(model).toBe(action.owner)
   })
 })
