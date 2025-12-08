@@ -1,3 +1,9 @@
+## [2.2.0-beta.4](https://github.com/vue-modeler/model/compare/v2.2.0-beta.3...v2.2.0-beta.4) (2025-12-07)
+
+### Bug Fixes
+
+* **action:** replace SrActionLike with ActionLike for improved type consistency ([56281da](https://github.com/vue-modeler/model/commit/56281da5223f7482af514c6c8cdc618bca26655b))
+
 ## [2.2.0-beta.3](https://github.com/vue-modeler/model/compare/v2.2.0-beta.2...v2.2.0-beta.3) (2025-12-05)
 
 ### Bug Fixes
