@@ -24,6 +24,9 @@ describe('Action constructor', () => {
       () => model,
       () => {
         // do nothing
+      },
+      () => {
+        return []
       }
     )
 
@@ -53,6 +56,9 @@ describe('Action constructor', () => {
         () => model,
         () => {
           // do nothing
+        },
+        () => {
+          return []
         }
       )
     } catch (error) {
@@ -74,7 +80,10 @@ describe('Action constructor', () => {
         () => model,
         () => {
           // do nothing
-        }
+        },
+        () => {
+          return []
+        } 
       )
     } catch (error) {
       expect(error).toBeInstanceOf(ActionInternalError)

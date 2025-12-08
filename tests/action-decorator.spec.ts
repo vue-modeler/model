@@ -164,6 +164,7 @@ describe('Original method wrapper execution', () => {
       lock: vi.fn(),
       unlock: vi.fn(),
       resetError: vi.fn(),
+      validate: vi.fn().mockReturnValue([]),
     }
 
     actionMethodMock = vi.fn().mockReturnValue(actionMock)

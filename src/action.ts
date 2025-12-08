@@ -39,6 +39,7 @@ export interface ActionLike<T extends object, Args extends any[] = unknown[]> {
   readonly isAbort: boolean
 
   is (...args: ActionStateName[]): boolean
+  validate (...args: Args): Error[]
   exec (...args: Args): Promise<void>
   abort (reason?: unknown): Promise<void>
   lock (): Promise<void>
@@ -75,11 +76,15 @@ export class Action<T extends object, Args extends any[] = unknown[]> implements
     protected _model: T,
     protected actionFunction: OriginalMethodWrapper<Args>,
     protected ownerGetter: () => Model<T>,
-    protected setStateCb?: (
+    protected setStateCb: (
       action: ActionLike<T, Args>,
       oldState: ActionStateName,
       newState: ActionStateName,
     ) => void,
+    protected _validateArgs: (
+      action: ActionLike<T, Args>,
+      ... args: Args
+    ) => Error[],
   ) {
     const name = actionFunction.name
 
@@ -102,14 +107,24 @@ export class Action<T extends object, Args extends any[] = unknown[]> implements
     model: T,
     actionFunction: OriginalMethodWrapper<Args>,
     ownerGetter: () => Model<T>,
-    setStateCb?: (
+    setStateCb: (
       action: ActionLike<T, Args>,
       oldState: ActionStateName,
       newState: ActionStateName,
     ) => void,
+    validateArgs: (
+      action: ActionLike<T, Args>,
+      ... args: Args
+    ) => Error[],
   ): ActionLike<T, Args> {
     
-    return shallowReactive(new Action(model, actionFunction, ownerGetter, setStateCb))
+    return shallowReactive(new Action(
+      model,
+      actionFunction,
+      ownerGetter,
+      setStateCb,
+      validateArgs,
+    ))
   }
 
   toString (): string {
@@ -132,10 +147,6 @@ export class Action<T extends object, Args extends any[] = unknown[]> implements
     const oldState = this._state
     this._state = newState
 
-    if (!this.setStateCb) {
-      return 
-    }
-    
     // Args of action are not important for setActionState method
     this.setStateCb(this, oldState, newState)
   }
@@ -201,6 +212,9 @@ export class Action<T extends object, Args extends any[] = unknown[]> implements
     return !!args.find((state) => this.state === state)
   }
 
+  validate(...args: Args): Error[] {
+    return this._validateArgs(this, ...args)
+  }
   /**
    * Put into action in PENDING state  
    */
