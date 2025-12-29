@@ -1,7 +1,7 @@
 {
   "type": "module",
   "name": "@vue-modeler/model",
-  "version": "2.1.0",
+  "version": "2.2.0-beta.7",
   "description": "A state management library based on models for Vue.js",
   "author": "abratko",
   "license": "MIT",
@@ -45,7 +45,7 @@
   },
   "scripts": {
     "build": "tsc && vite build",
-    "test": "vitest",
+    "test": "tsc --noEmit && vitest",
     "coverage": "vitest run --coverage",
     "semantic-release": "semantic-release"
   },

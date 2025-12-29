@@ -6,10 +6,26 @@ import { ProtoModel } from '../src/proto-model'
 import { Model } from '../src/types'
 
 class TestProtoModel extends ProtoModel {
+  protected _isThisShallowInConstructor  = false
+
+  constructor() {
+    super()
+
+    this._isThisShallowInConstructor = isShallow(this)
+  }
+
   regularMethod(): string {
     return 'regular'
   }
   
+  get isThisShallowInConstructor(): boolean {
+    return this._isThisShallowInConstructor
+  }
+
+  get isThisShallow(): boolean {
+    return isShallow(this)
+  }
+
   @action
   async actionMethod(): Promise<void> {
     return Promise.resolve()
@@ -22,6 +38,8 @@ describe('Model', () => {
     const model = TestProtoModel.model()
 
     expect(isShallow(model)).toBeTruthy()
+    expect(model.isThisShallow).toBeTruthy()
+    expect(model.isThisShallowInConstructor).toBeFalsy()
   })
   
   it('preserves original methods', () => {

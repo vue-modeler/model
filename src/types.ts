@@ -1,10 +1,11 @@
-import { Action } from './action'
+import { ShallowReactive } from 'vue'
+import { Action, ActionLike } from './action'
 import { ProtoModel } from './proto-model'
 
-export type ActionPublic = Omit<Action, 'call'>
 export type OriginalMethod = (...args: any[]) => Promise<void>
 
-export interface OriginalMethodWrapper<Args extends unknown[] = unknown[]> {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export interface OriginalMethodWrapper<Args extends any[] = unknown[]> {
   (...args: Args): Promise<void>
   [Action.actionFlag]: OriginalMethod
 }
@@ -12,14 +13,14 @@ export interface OriginalMethodWrapper<Args extends unknown[] = unknown[]> {
 export type ActionStateName = keyof typeof Action.possibleState
 
 export type ProtectedMethodInModel = 'action' | 'setActionState'
-export type Model<T> = {
+export type Model<T extends object = object> = ShallowReactive<{
   [K in keyof T]:
     T[K] extends ((...args: infer Args) => Promise<void>)
-      ? Action<Args>
+      ? ActionLike<T, Args>
       : K extends ProtectedMethodInModel
         ? never
         : T[K]
-}
+}>
 
 export type ModelAdapterProxyConstructor = new <Target extends ProtoModel>(
   target: Target,

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { ActionError } from '../../src/error/action-error'
-import { ActionPublic, Model } from '../../src/types'
+import { Model } from '../../src/types'
 import { createApiMock } from '../test-model/create-api-mock'
 import { createTestModel } from '../test-model/create-test-model'
 import { TestProtoModel } from '../test-model/test-proto-model'
@@ -23,11 +23,11 @@ describe('Action in ERROR state', () => {
 
   it('can go to PENDING state', async () => {
     const promise = model.singleErrorAction.exec()
-    validatePendingState(model.singleErrorAction as ActionPublic, [], promise)
+    validatePendingState(model.singleErrorAction, promise)
 
     await promise
     validateErrorState(
-      model.singleErrorAction as ActionPublic,
+      model.singleErrorAction,
       new ActionError(
         model.singleErrorAction.name,
         { cause: new Error('message') }
@@ -37,13 +37,13 @@ describe('Action in ERROR state', () => {
 
   it('can go to READY state', () => {
     model.singleErrorAction.resetError()
-    validateReadyState(model.singleErrorAction as ActionPublic)
+    validateReadyState(model.singleErrorAction)
   })
 
 
   it('can go to LOCK state after calling method lock from external execution context', async () => {
     await model.singleErrorAction.lock()
-    validateLockState(model.singleErrorAction as ActionPublic)
+    validateLockState(model.singleErrorAction)
   })
 
   it('throws error after trying unlock', () => {
@@ -54,7 +54,7 @@ describe('Action in ERROR state', () => {
 
     if (oldError) {
       validateErrorState(
-        model.singleErrorAction as ActionPublic,
+        model.singleErrorAction,
         oldError,
       )
     }
@@ -69,7 +69,7 @@ describe('Action in ERROR state', () => {
 
     if (oldError) {
       validateErrorState(
-        model.singleErrorAction as ActionPublic,
+        model.singleErrorAction,
         oldError,
       )
     }

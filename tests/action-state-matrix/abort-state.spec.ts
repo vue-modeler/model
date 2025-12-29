@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { ActionPublic, Model } from '../../src/types'
 import { createApiMock } from '../test-model/create-api-mock'
 import { createTestModel } from '../test-model/create-test-model'
 import { TestProtoModel } from '../test-model/test-proto-model'
 import { validateAbortState, validateLockState, validatePendingState } from './state-validator/state-validator'
+import { Model } from '../../src/types'
 
 describe('Action in ABORT state', () => {
   let model: Model<TestProtoModel>
@@ -17,26 +17,26 @@ describe('Action in ABORT state', () => {
   })
 
   it('goes to PENDING state', () => {
-    validateAbortState(model.actionWithAbort as ActionPublic, 'Abort reason')
+    validateAbortState(model.actionWithAbort, 'Abort reason')
     const promise = model.actionWithAbort.exec()
-    validatePendingState(model.actionWithAbort as ActionPublic, [], promise)
+    validatePendingState(model.actionWithAbort, promise)
   })
 
   it('goes to LOCK state', () => {
-    validateAbortState(model.actionWithAbort as ActionPublic, 'Abort reason')
+    validateAbortState(model.actionWithAbort, 'Abort reason')
     expect(() => model.actionWithAbort.lock()).not.toThrow()
-    validateLockState(model.actionWithAbort as ActionPublic)
+    validateLockState(model.actionWithAbort)
   })
 
   it('allows to call abort again without errors.', () => {
-    validateAbortState(model.actionWithAbort as ActionPublic, 'Abort reason')
+    validateAbortState(model.actionWithAbort, 'Abort reason')
     expect(() => model.actionWithAbort.abort()).not.toThrow()
-    validateAbortState(model.actionWithAbort as ActionPublic, 'Abort reason')
+    validateAbortState(model.actionWithAbort, 'Abort reason')
   })
 
   it('throws error when trying to call resetError', () => {
-    validateAbortState(model.actionWithAbort as ActionPublic, 'Abort reason')
+    validateAbortState(model.actionWithAbort, 'Abort reason')
     expect(() => model.actionWithAbort.resetError()).toThrow('Trying to update state of actionWithAbort from abort to ready')
-    validateAbortState(model.actionWithAbort as ActionPublic, 'Abort reason')
+    validateAbortState(model.actionWithAbort, 'Abort reason')
   })
 })

@@ -3,6 +3,7 @@ import { createApiMock } from '../test-model/create-api-mock'
 import { createTestModel } from '../test-model/create-test-model'
 import { Action } from '../../src/action'
 import { ActionInternalError } from '../../src/error'
+import { TestProtoModel } from '../test-model/test-proto-model'
   
 describe('Normal asynchronous method', () => {
   
@@ -39,15 +40,15 @@ describe('Normal asynchronous method', () => {
     }
   })
   
-  test('with @action decorator and with not void result return undefined', async () => {
+  test('with @action decorator and with not void result returns Promise<void>', async () => {
     const apiMock = createApiMock()
     const model = createTestModel(apiMock)
 
-    const action = model.normalAsyncMethodWithReturnDataAsAction as unknown as Action<[number]>
+    const action = model.normalAsyncMethodWithReturnDataAsAction
     expect(action).toBeInstanceOf(Action)
 
-    // eslint-disable-next-line @typescript-eslint/no-confusing-void-expression
-    const result = await action.exec(10)
+    // eslint-disable-next-line
+    const result = await (action as unknown as Action<TestProtoModel,[number]>).exec(10)
     expect(result).toBeUndefined()
   })
 
@@ -87,22 +88,22 @@ describe('Synchronous method with @action decorator', () => {
     expect(model.normalSyncMethodWithReturnDataAsAction).instanceOf(Action)
   })
   
-  test('and void result is Action and returns Promise<undefined>', async () => {
+  test('and void result is Action and returns Promise<void>', async () => {
     const apiMock = createApiMock()
     const model = createTestModel(apiMock)
   
-    const action = model.normalSyncMethodWithVoid as unknown as Action
-    // eslint-disable-next-line @typescript-eslint/no-confusing-void-expression
-    const result = await action.exec()
+    const action = model.normalSyncMethodWithVoid
+    // eslint-disable-next-line 
+    const result = await (action as unknown as Action<TestProtoModel,[]>).exec()
     expect(result).toBeUndefined()
   })
   test('and not void result is Action and returns Promise<void>', async () => {
     const apiMock = createApiMock()
     const model = createTestModel(apiMock)
   
-    const action = model.normalSyncMethodWithReturnDataAsAction as unknown as Action
-    // eslint-disable-next-line @typescript-eslint/no-confusing-void-expression
-    const result = await action.exec(10)
+    const action = model.normalSyncMethodWithReturnDataAsAction
+    // eslint-disable-next-line 
+    const result = await (action as unknown as Action<TestProtoModel,[number]>).exec(10)
     expect(result).toBeUndefined()
   })
   

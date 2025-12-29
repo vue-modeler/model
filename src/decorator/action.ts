@@ -14,7 +14,17 @@ export function action<T extends ProtoModel, Args extends unknown[]>(
   if (context.private) {
     throw new Error('Action decorator is not supported for private methods')
   }
-  const name = context.name.toString()
+
+  let name: string
+  try {
+    name = context.name.toString()
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'unknown error'
+
+    const message = `Invalid context. Can\`t get name of the method: ${errorMessage}`
+        
+    throw new Error(message)
+  }
   
   const stubObj = {
     // Action constructor checks that model has method with the same name.
