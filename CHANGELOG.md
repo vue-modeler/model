@@ -1,3 +1,19 @@
+## [2.2.0](https://github.com/vue-modeler/model/compare/v2.1.0...v2.2.0) (2025-12-29)
+
+### Features
+
+* **action-executor:** implement ActionExecutor class with initialization and execution logic ([a2dd2e6](https://github.com/vue-modeler/model/commit/a2dd2e668f3a2718117ef126e8b467a5ac4fc236))
+* **action:** add argument validation to Action class ([0a9edc6](https://github.com/vue-modeler/model/commit/0a9edc64c4f71a9f0b04a17138f5adb3f1c9ae5b))
+* **action:** summary - created interface ActionLike and SrActionLike for improved reactivity ([4766f48](https://github.com/vue-modeler/model/commit/4766f4837767e0c44d807e2b23b7e233394e38cd))
+
+### Bug Fixes
+
+* **action:** improve error handling for method name retrieval ([73afe1a](https://github.com/vue-modeler/model/commit/73afe1a22586dd8a3cfaa39dacdc68daa6872785))
+* **action:** replace SrActionLike with ActionLike for improved type consistency ([56281da](https://github.com/vue-modeler/model/commit/56281da5223f7482af514c6c8cdc618bca26655b))
+* **index:** export action module to enhance functionality ([8ed9938](https://github.com/vue-modeler/model/commit/8ed99383db3598f5c4bf7e36be8af8f86d6d012f))
+* **proto-model:**  modelKey added  into ProtoModel.createModel instead ProtoModel.model ([e5a9609](https://github.com/vue-modeler/model/commit/e5a960999c0ed4564193e82981ce8755bd1b04f1))
+* **proto-model:** update watchStopHandler return function to ensure proper cleanup of handlers ([461528f](https://github.com/vue-modeler/model/commit/461528f87e3f475c887b0cfeda24e3e790895886))
+
 ## [2.2.0-beta.7](https://github.com/vue-modeler/model/compare/v2.2.0-beta.6...v2.2.0-beta.7) (2025-12-08)
 
 ### Features
