@@ -1,9 +1,10 @@
+import { shallowReactive } from 'vue'
 import { ActionError } from './error/action-error'
 import { ActionInternalError } from './error/action-internal-error'
 import { ActionStatusConflictError } from './error/action-status-conflict-error'
 import { ActionUnexpectedAbortError } from './error/action-unexpected-abort-error'
 import { ProtoModel } from './proto-model'
-import { ActionStateName, OriginalMethodWrapper } from './types'
+import { ActionStateName, Model, OriginalMethodWrapper } from './types'
 
 const isAbortError = (originalError: unknown): boolean => (originalError instanceof DOMException
   && originalError.name === 'AbortError')
@@ -16,8 +17,45 @@ interface ActionPendingValue {
 
 type ActionValue = ActionPendingValue | ActionError | null
 
+/**
+ * Public API interface for Action instances.
+ * Describes only the public contract without implementation details.
+ */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export class Action<Args extends any[] = unknown[]> {
+export interface ActionLike<T extends object, Args extends any[] = unknown[]> {
+  readonly name: string
+  readonly owner: Model<T>
+  readonly possibleStates: ActionStateName[]
+  readonly state: ActionStateName
+  readonly abortController: null | AbortController
+  readonly args: Args | never[]
+  readonly promise: null | Promise<void>
+  readonly error: null | ActionError
+  readonly abortReason: unknown
+  readonly isPending: boolean
+  readonly isError: boolean
+  readonly isReady: boolean
+  readonly isLock: boolean
+  readonly isAbort: boolean
+
+  is (...args: ActionStateName[]): boolean
+  validate (...args: Args): Error[]
+  exec (...args: Args): Promise<void>
+  abort (reason?: unknown): Promise<void>
+  lock (): Promise<void>
+  unlock (): this
+  resetError (): this
+  toString (): string
+}
+
+/**
+ * We should to use here `<T extends ProtoModel>` because 
+ * we need some methods from `ProtoModel` class which are protected in context of `Model<T>`.
+ * For example, `setActionState` method.
+ * @see `ProtoModel.setActionState`
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export class Action<T extends object, Args extends any[] = unknown[]> implements ActionLike<T, Args> {
   static readonly actionFlag = Symbol('__action_original_method__')
   static readonly possibleState = {
     pending: 'pending',
@@ -35,13 +73,25 @@ export class Action<Args extends any[] = unknown[]> {
   protected _args: Args | null = null
 
   constructor (
-    protected model: ProtoModel, // TODO: thing about this arg, it may be potential problem
+    protected _model: T,
     protected actionFunction: OriginalMethodWrapper<Args>,
+    protected ownerGetter: () => Model<T>,
+    protected setStateCb: (
+      action: ActionLike<T, Args>,
+      oldState: ActionStateName,
+      newState: ActionStateName,
+    ) => void,
+    protected _validateArgs: (
+      action: ActionLike<T, Args>,
+      ... args: Args
+    ) => Error[],
   ) {
     const name = actionFunction.name
 
-    const isModelMethod = name in model && typeof (model as unknown as Record<string, unknown>)[name] === 'function'
-    if (!isModelMethod) {
+    const isModelMethod = name in this._model 
+      && typeof this._model[name as keyof T] === 'function'
+    
+      if (!isModelMethod) {
       throw new ActionInternalError(`Model does not contain method ${name}`)
     }
 
@@ -52,8 +102,37 @@ export class Action<Args extends any[] = unknown[]> {
     this.name = name
   }
 
+
+  static create<T extends ProtoModel, Args extends unknown[] = unknown[]>(
+    model: T,
+    actionFunction: OriginalMethodWrapper<Args>,
+    ownerGetter: () => Model<T>,
+    setStateCb: (
+      action: ActionLike<T, Args>,
+      oldState: ActionStateName,
+      newState: ActionStateName,
+    ) => void,
+    validateArgs: (
+      action: ActionLike<T, Args>,
+      ... args: Args
+    ) => Error[],
+  ): ActionLike<T, Args> {
+    
+    return shallowReactive(new Action(
+      model,
+      actionFunction,
+      ownerGetter,
+      setStateCb,
+      validateArgs,
+    ))
+  }
+
   toString (): string {
     return this.name
+  }
+
+  get owner (): Model<T> {
+    return this.ownerGetter()
   }
 
   get possibleStates (): ActionStateName[] {
@@ -65,9 +144,11 @@ export class Action<Args extends any[] = unknown[]> {
   }
 
   protected set state (newState: ActionStateName) {
+    const oldState = this._state
     this._state = newState
 
-    this.model.setActionState(this as never as Action)
+    // Args of action are not important for setActionState method
+    this.setStateCb(this, oldState, newState)
   }
 
   get abortController (): null | AbortController {
@@ -131,6 +212,9 @@ export class Action<Args extends any[] = unknown[]> {
     return !!args.find((state) => this.state === state)
   }
 
+  validate(...args: Args): Error[] {
+    return this._validateArgs(this, ...args)
+  }
   /**
    * Put into action in PENDING state  
    */
@@ -160,7 +244,7 @@ export class Action<Args extends any[] = unknown[]> {
     this._args = args
 
     const originalMethod = this.actionFunction[Action.actionFlag]
-    const result = originalMethod.apply(this.model, newArgs)
+    const result = originalMethod.apply(this._model, newArgs)
 
     // Result can be not a promise.
     // But exec must return promise.
