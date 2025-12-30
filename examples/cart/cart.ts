@@ -1,4 +1,4 @@
-import { ProtoModel, action } from '@vue-modeler/model'
+import { ProtoModel, action } from '../../src'
 import { ShallowReactive } from 'vue'
 
 interface ApiService {
