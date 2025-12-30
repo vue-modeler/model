@@ -1,3 +1,9 @@
+## [2.2.2](https://github.com/vue-modeler/model/compare/v2.2.1...v2.2.2) (2025-12-30)
+
+### Bug Fixes
+
+* **tests:** update import path for Model in cart.spec.ts ([5fdcb6c](https://github.com/vue-modeler/model/commit/5fdcb6cb5525e253aaf5e93fe306f5e033eef7a9))
+
 ## [2.2.1](https://github.com/vue-modeler/model/compare/v2.2.0...v2.2.1) (2025-12-30)
 
 ### Bug Fixes
