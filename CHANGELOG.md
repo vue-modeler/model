@@ -1,3 +1,10 @@
+## [2.2.1](https://github.com/vue-modeler/model/compare/v2.2.0...v2.2.1) (2025-12-30)
+
+### Bug Fixes
+
+* **proto-model:** remove ProtoModel.createModel file ([35146f9](https://github.com/vue-modeler/model/commit/35146f9995158d9f2b0f2c2b18c93308819cc3b6))
+* release stable version from beta ([8b896fc](https://github.com/vue-modeler/model/commit/8b896fcce0486d95bc0479e7e77108cc241055b8))
+
 ## [2.2.1-beta.1](https://github.com/vue-modeler/model/compare/v2.2.0...v2.2.1-beta.1) (2025-12-30)
 
 ### Bug Fixes
