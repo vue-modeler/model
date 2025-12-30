@@ -2,27 +2,21 @@ name: Test
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, beta ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, beta ]
 
 jobs:
   publish:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [20.x]
-      # Don't cancel other matrix jobs if one fails
-      fail-fast: false
-    
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node.js ${{ matrix.node-version }}
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: '20'
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
