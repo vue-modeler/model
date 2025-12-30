@@ -1,4 +1,4 @@
-# Introduction
+# vue-modeler/model
 
 ## What is @vue-modeler/model
 
@@ -10,7 +10,7 @@ A state management library based on models for [Vue.js](https://vuejs.org/). The
 
 - **No global state store**. No store means no problems. State is encapsulated within the model and is reactive. Outside the model, it's only accessible for reading and observation.
 - **Extremely simple API**: A model prototype is a standard class, actions are defined as standard methods with decorators. Create a model by calling a factory method — nothing more needed. Reactive properties and behavior are defined using the standard Vue API.
-- **Supports shared models**. A built-in model container ensures that a model remains in memory while being used. Unused models are automatically removed from the container.
+- **Supports shared models**. Models can be shared across components. You can manage model instances using dependency injection or your own container pattern.
 - **Follows DRY principle**. Actions have their own state. There's no need to write additional code to track action states. Focus instead on designing architecture and business logic.
 - **Embraces OOP**. Model prototypes are classes, supporting inheritance, encapsulation, polymorphism, and destructors.
 - **Complies with SOLID principles**. Encourages clean coding practices like composition of models, dependency injection via constructors, separation of interfaces, single responsibility, etc.
@@ -55,13 +55,13 @@ This library promises to simplify state management in [Vue.js](https://vuejs.org
 
 ## Installation
 
-First, [install @vue-modeler/dc](https://github.com/vue-modeler/dc?tab=readme-ov-file#installation)
-
-Then install @vue-modeler/model:
+Install @vue-modeler/model:
 
 ```bash
 npm add @vue-modeler/model
 ```
+
+It is recommended to use it together with the dependency container [@vue-modeler/dc](https://github.com/vue-modeler/dc). For installation instructions and provider setup, see the [@vue-modeler/dc documentation](https://github.com/vue-modeler/dc?tab=readme-ov-file#installation).
 
 ## Usage Examples
 
@@ -105,7 +105,7 @@ class User extends ProtoModel {
   ) {
      super()
 
-     this.action(this.init).exec()
+     this.init()
   }   
   
   // Actions (async methods with @action decorator)
@@ -148,15 +148,28 @@ export const patchUser = async (dto: PatchDto): Promise<void> => {
 }
 ```
 
-### 3. Compose all together and create model provider  
+### 3. Create model provider
 
-```typescript 
-import { model } from '@vue-modeler/model'
+Using `@vue-modeler/dc` (recommended):
 
-export const useUser = model(() => new User({
-   fetchUser, 
-   patch: patchUser
+```typescript
+import { provider } from '@vue-modeler/dc'
+import { User } from './user-model'
+import { fetchUser, patchUser } from './api'
+
+export const useUser = provider(() => User.model({
+  fetchUser,
+  patch: patchUser
 }))
+```
+
+Or without dependency container:
+
+```typescript
+export const useUser = () => User.model({
+  fetchUser,
+  patch: patchUser
+})
 ```
 
 ### 4. Using Models in Vue Components
