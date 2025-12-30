@@ -13,7 +13,10 @@
                 ],
                 "parserOpts": {
                     "noteKeywords": ["BREAKING CHANGE", "BREAKING CHANGES"]
-                }
+                },
+                "mergeCommits": true,
+                "mergeCommitParser": "conventionalCommits"
+
             }
         ],
         [
