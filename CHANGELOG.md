@@ -1,3 +1,9 @@
+## [2.2.3](https://github.com/vue-modeler/model/compare/v2.2.2...v2.2.3) (2026-01-01)
+
+### Bug Fixes
+
+* **cart:** update import path for ProtoModel in cart.ts ([51e6899](https://github.com/vue-modeler/model/commit/51e68994a163f39162ad62441aa45652e9b14149))
+
 ## [2.2.3-beta.1](https://github.com/vue-modeler/model/compare/v2.2.2...v2.2.3-beta.1) (2025-12-30)
 
 ### Bug Fixes
