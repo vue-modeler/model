@@ -1,5 +1,7 @@
 # vue-modeler/model
 
+[![npm version](https://img.shields.io/npm/v/@vue-modeler/model.svg)](https://www.npmjs.com/package/@vue-modeler/model) [![codecov](https://codecov.io/gh/vue-modeler/model/branch/main/graph/badge.svg?token=BFQI22MBZ1)](https://codecov.io/gh/vue-modeler/model)
+
 ## What is @vue-modeler/model
 
 A state management library based on models for [Vue.js](https://vuejs.org/). The extremely simple API serves single purpose — creating models. It preserves types, supports OOP, DRY, and SOLID principles.
