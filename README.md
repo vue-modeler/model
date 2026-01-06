@@ -1,6 +1,6 @@
 # vue-modeler/model
 
-[![npm version](https://img.shields.io/npm/v/@vue-modeler/model.svg)](https://www.npmjs.com/package/@vue-modeler/model) [![codecov](https://codecov.io/gh/vue-modeler/model/branch/main/graph/badge.svg?token=BFQI22MBZ1)](https://codecov.io/gh/vue-modeler/model)
+[![npm version](https://img.shields.io/npm/v/@vue-modeler/model.svg)](https://www.npmjs.com/package/@vue-modeler/model) [![codecov](https://codecov.io/gh/vue-modeler/model/branch/main/graph/badge.svg?token=BFQI22MBZ1)](https://codecov.io/gh/vue-modeler/model) [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=vue-modeler_model&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=vue-modeler_model)
 
 ## What is @vue-modeler/model
 
