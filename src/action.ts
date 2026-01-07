@@ -65,7 +65,7 @@ export class Action<T extends object, Args extends any[] = unknown[]> implements
     abort: 'abort',
   } as const
 
-  static abortedByLock = Symbol('lock')
+  static readonly abortedByLock = Symbol('lock')
 
   readonly name: string
   protected _state: ActionStateName = Action.possibleState.ready
@@ -159,9 +159,8 @@ export class Action<T extends object, Args extends any[] = unknown[]> implements
     return null
   }
 
-  // TODO: add tests
   get args (): Args | never[] {
-    return this._args || []
+    return this._args ?? []
   }
 
   get promise (): null | Promise<void> {
@@ -209,7 +208,7 @@ export class Action<T extends object, Args extends any[] = unknown[]> implements
   }
 
   is (...args: ActionStateName[]): boolean {
-    return !!args.find((state) => this.state === state)
+    return args.includes(this.state)
   }
 
   validate(...args: Args): Error[] {
@@ -228,7 +227,7 @@ export class Action<T extends object, Args extends any[] = unknown[]> implements
     }
 
     const newArgs = [...args]
-    let abortController = args.length && args[args.length - 1] as AbortController | undefined
+    let abortController = args.length && args.at(-1) as AbortController | undefined
 
     if (!(abortController instanceof AbortController)) {
       abortController = new AbortController()

@@ -31,8 +31,7 @@ class TestProtoModelWithActions extends ProtoModel {
 }
 
 class TestProtoModelWithActionForModelKeyTest extends ProtoModel {
-  @action
-  async testAction(): Promise<void> {
+  @action testAction(): Promise<void> {
     return Promise.resolve()
   }
 }

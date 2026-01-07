@@ -26,8 +26,7 @@ class TestProtoModel extends ProtoModel {
     return isShallow(this)
   }
 
-  @action
-  async actionMethod(): Promise<void> {
+  @action actionMethod(): Promise<void> {
     return Promise.resolve()
   }
 }
