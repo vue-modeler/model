@@ -7,10 +7,6 @@ settings:
 importers:
 
   .:
-    dependencies:
-      vue:
-        specifier: '>=2.7 <4.0.0'
-        version: 2.7.16
     devDependencies:
       '@eslint/js':
         specifier: ^9.39.2
@@ -63,6 +59,9 @@ importers:
       vitest:
         specifier: ^4.0.16
         version: 4.0.16(@types/node@25.0.3)(jsdom@27.4.0)
+      vue:
+        specifier: '>=2.7 <4.0.0'
+        version: 2.7.16
 
 packages:
 
