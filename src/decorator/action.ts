@@ -38,7 +38,6 @@ export function action<T extends ProtoModel, Args extends unknown[]>(
       // This code will be executed only for internal calls (this.actionName()). 
       // For external calls (model.actionName()) will be executed Proxy handler.
       // @see src/create-model.ts
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       return this.action(stubObj[name]).exec(...args)
     } as OriginalMethodWrapper
   } 
