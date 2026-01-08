@@ -307,7 +307,8 @@ describe('Test model', () => {
       nested: nestedAction.state,
     }), (state) => originStates.push(state))
 
-    void setTimeout(() => void model.actionWithAbort.abort(), 0)
+    // eslint-disable-next-line  @typescript-eslint/no-floating-promises
+    setTimeout(() => { model.actionWithAbort.abort() }, 0)
     await model.rootWithNestedAndAbort.exec(
       { shareAbortController: false },
       abortController,
@@ -332,8 +333,10 @@ describe('Test model', () => {
       root: rootAction.state,
       nested: nestedAction.state,
     }), (state) => originStates.push(state))
-
-    void setTimeout(() => void model.actionWithAbort.abort(), 0)
+    
+    // eslint-disable-next-line  @typescript-eslint/no-floating-promises
+    setTimeout(() => { model.actionWithAbort.abort() }, 0)
+    
     const actionPromise = model.rootWithNestedAndAbort.exec(
       { shareAbortController: true },
       abortController,
@@ -362,7 +365,8 @@ describe('Test model', () => {
       nested: nestedState.state,
     }), (state) => originStates.push(state))
 
-    void setTimeout(() => void model.actionWithAbort.lock(), 0)
+    // eslint-disable-next-line  @typescript-eslint/no-floating-promises
+    setTimeout(() => { model.actionWithAbort.lock() }, 0)
     await model.rootWithNestedAndAbort.exec({ shareAbortController: false })
 
     expect(originStates.length).toEqual(nestedWithLock.length)

@@ -53,7 +53,7 @@ export abstract class ProtoModel {
     protoModel: Target,
   ): Model<Target> {
     if (!(protoModel instanceof ProtoModel)) {
-      throw new Error('ProtoModel instance is required')
+      throw new TypeError('ProtoModel instance is required')
     }
 
     const model = new ModelProxy<Target>(

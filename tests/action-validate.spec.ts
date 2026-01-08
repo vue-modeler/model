@@ -7,7 +7,7 @@ import { Model } from '../src/types'
 
 class TestProtoModelWithValidation extends ProtoModel {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  @action async testAction(value: number): Promise<void> {
+  @action testAction(value: number): Promise<void> {
     return Promise.resolve()
   }
 
@@ -28,8 +28,7 @@ class TestProtoModelWithValidation extends ProtoModel {
 }
 
 class TestProtoModelWithEmptyValidation extends ProtoModel {
-  @action
-  async testAction(): Promise<void> {
+  @action testAction(): Promise<void> {
     return Promise.resolve()
   }
 
@@ -84,8 +83,7 @@ describe('Action.validate', () => {
 
   it('throws error when validateArgs throws', () => {
     class TestProtoModelWithThrowingValidation extends ProtoModel {
-      @action
-      async testAction(): Promise<void> {
+      @action testAction(): Promise<void> {
         return Promise.resolve()
       }
 
@@ -101,8 +99,7 @@ describe('Action.validate', () => {
 
   it('preserves error instances from validateArgs', () => {
     class TestProtoModelWithCustomErrors extends ProtoModel {
-      @action
-      async testAction(): Promise<void> {
+      @action testAction(): Promise<void> {
         return Promise.resolve()
       }
 

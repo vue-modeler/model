@@ -1,8 +1,7 @@
-import { nextTick } from 'vue'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { shallowReactive, ShallowReactive } from 'vue'
-import { Cart } from '../cart'
+import { nextTick, shallowReactive, ShallowReactive } from 'vue'
 import type { Model } from '../../../src'
+import { Cart } from '../cart'
 
 interface ApiService {
   fetchAll: () => Promise<string[]>

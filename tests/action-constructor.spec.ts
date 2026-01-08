@@ -5,6 +5,9 @@ import { Model, OriginalMethodWrapper } from '../src/types'
 import { TestProtoModel } from './test-model/test-proto-model'
 import { createApiMock } from './test-model/create-api-mock'
 
+function someFunction(): Promise<void> {
+  return Promise.resolve()
+}
 describe('Action constructor', () => {
 
   let protoModel: TestProtoModel
@@ -68,9 +71,7 @@ describe('Action constructor', () => {
   })
 
   test('throws error when method does not exist on model', () => {
-    function someFunction(): Promise<void> {
-      return Promise.resolve()
-    }
+    
 
     expect.assertions(2)
     try {

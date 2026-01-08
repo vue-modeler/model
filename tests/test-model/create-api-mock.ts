@@ -14,7 +14,7 @@ export function createApiMock (): {
 
       return promise
     }),
-    sendRequestFromParent: vi.fn().mockImplementation(async () => {
+    sendRequestFromParent: vi.fn().mockImplementation(() => {
       return Promise.resolve()
     }),
   }

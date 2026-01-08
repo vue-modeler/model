@@ -47,7 +47,7 @@ describe('Normal asynchronous method', () => {
     const action = model.normalAsyncMethodWithReturnDataAsAction
     expect(action).toBeInstanceOf(Action)
 
-    // eslint-disable-next-line
+    // eslint-disable-next-line @typescript-eslint/no-confusing-void-expression
     const result = await (action as unknown as Action<TestProtoModel,[number]>).exec(10)
     expect(result).toBeUndefined()
   })
@@ -93,7 +93,7 @@ describe('Synchronous method with @action decorator', () => {
     const model = createTestModel(apiMock)
   
     const action = model.normalSyncMethodWithVoid
-    // eslint-disable-next-line 
+    // eslint-disable-next-line @typescript-eslint/no-confusing-void-expression 
     const result = await (action as unknown as Action<TestProtoModel,[]>).exec()
     expect(result).toBeUndefined()
   })
@@ -102,7 +102,7 @@ describe('Synchronous method with @action decorator', () => {
     const model = createTestModel(apiMock)
   
     const action = model.normalSyncMethodWithReturnDataAsAction
-    // eslint-disable-next-line 
+    // eslint-disable-next-line @typescript-eslint/no-confusing-void-expression
     const result = await (action as unknown as Action<TestProtoModel,[number]>).exec(10)
     expect(result).toBeUndefined()
   })

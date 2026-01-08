@@ -48,14 +48,12 @@ export class TestProtoModel extends ParentProtoModel {
     await super.actionWithSuperCall(...(args as []))
   }
 
-  @action async singleErrorAction (): Promise<void> {
+  @action singleErrorAction (): Promise<void> {
     return Promise.reject(new Error('message'))
   }
 
-  @action async actionWithCustomError (error: Error): Promise<void> {
-    await new Promise((resolve, reject) => {
-      reject(error)
-    })
+  @action actionWithCustomError (error: Error): Promise<void> {
+    return Promise.reject(error)
   }
 
   @action async rootSuccessAction (): Promise<void> {
@@ -87,7 +85,7 @@ export class TestProtoModel extends ParentProtoModel {
   }
 
   @action async subActionWithError (): Promise<void> {
-    await Promise.reject(new Error())
+    await Promise.reject(new Error('Sub action error'))
   }
 
   @action async recursivelyAction (index = 0): Promise<void> {
@@ -139,13 +137,13 @@ export class TestProtoModel extends ParentProtoModel {
    * But it is not Action, because decorator is not applied.
    * Thus, trying to call model.normalAsyncMethod.exec() will THROW AN ERROR IN RUNTIME
    */
-  async normalAsyncMethodWithVoidResult (message: string): Promise<void> {
+  normalAsyncMethodWithVoidResult (message: string): Promise<void> {
     return Promise.reject(new Error(message))
   }
 
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore
-  @action async normalAsyncMethodWithReturnDataAsAction (data: number): Promise<number> {
+  @action normalAsyncMethodWithReturnDataAsAction (data: number): Promise<number> {
     return Promise.resolve(data)
   }
 
@@ -167,18 +165,18 @@ export class TestProtoModel extends ParentProtoModel {
    * because an Action is an asynchronous method with void result.
    */
   normalSyncMethodWithError (): void {
-    throw new Error()
+    throw new Error('Some error')
   }
 
   normalSyncMethodWithData<T> (data:T): T {
     return data
   }
 
-  async normalAsyncMethodWithData<T> (data: T): Promise<T> {
+  normalAsyncMethodWithData<T> (data: T): Promise<T> {
     return Promise.resolve(data)
   }
 
-  async normalAsyncMethodWithError (message: string): Promise<string> {
+  normalAsyncMethodWithError (message: string): Promise<string> {
     return Promise.reject(new Error(message))
   }
 
