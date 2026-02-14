@@ -37,6 +37,21 @@ describe('Cart', () => {
       expect(cart.items.size).toBe(0)
       expect(apiService.fetchAll).not.toHaveBeenCalled()
     })
+
+    it('initializes with items from API when user is already logged in', async () => {
+      const mockItems = ['sku1', 'sku2']
+      vi.mocked(apiService.fetchAll).mockResolvedValue(mockItems)
+
+      const loggedInUser = shallowReactive<User>({ isLoggedIn: true })
+      const cartWithLoggedInUser = Cart.model(loggedInUser, apiService)
+
+      await nextTick()
+      await cartWithLoggedInUser.init.promise
+
+      expect(apiService.fetchAll).toHaveBeenCalledTimes(1)
+      expect(cartWithLoggedInUser.items.size).toBe(2)
+      expect(Array.from(cartWithLoggedInUser.items)).toEqual(mockItems)
+    })
   })
 
   describe('items getter', () => {

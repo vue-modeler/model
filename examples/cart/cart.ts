@@ -31,7 +31,7 @@ export class Cart extends ProtoModel {
 
         this._items = new Set()
       },
-      { immediately: true },
+      { immediate: true },
     )
   }
 
